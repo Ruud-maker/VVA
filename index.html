@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -5,23 +6,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vehicle Valuation Assistant</title>
 <style>
+*{box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;margin:0}
 header{background:#17365d;color:white;padding:22px}
 main{max-width:900px;margin:20px auto;padding:12px}
 section{background:white;padding:18px;border-radius:12px;margin-bottom:15px}
-input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
-button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px}
+input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;border:1px solid #ccc;border-radius:6px}
+button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
 small{color:#64748b}
 .result{background:#eaf1f8;padding:12px;border-radius:8px;margin:10px 0}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
+.print-only{display:none}
+
+@page{size:A4;margin:16mm}
+
+@media print{
+body{background:white;color:#111;font-size:10.5pt}
+header{background:white!important;color:#111!important;padding:0 0 12px;border-bottom:2px solid #17365d}
+header h1{font-size:21pt;margin:0 0 5px}
+header p{margin:0}
+main{max-width:none;margin:0;padding:0}
+section{background:white;box-shadow:none;border:0;border-bottom:1px solid #bbb;border-radius:0;padding:12px 0;margin:0;break-inside:avoid}
+button,.no-print,#records,.comparable button,.comparable-entry{display:none!important}
+.print-only{display:block}
+input,textarea{border:0;border-bottom:1px solid #ddd;border-radius:0;padding:3px 0;margin:2px 0 8px;background:white;color:#111;font-size:10pt}
+textarea{min-height:45px}
+.result{background:white;border:1px solid #aaa;padding:12px}
+small{color:#333}
+a{color:#111;text-decoration:none}
+h1,h2,h3{break-after:avoid}
+.comparable{padding:7px 0;break-inside:avoid}
+}
 </style>
 </head>
+
 <body>
 <header>
 <h1>Vehicle Valuation Assistant</h1>
 <p>European Vehicle Valuation & Customs Intelligence</p>
 </header>
+
 <main>
+
+<div class="print-only" style="margin-bottom:18px">
+<h2>Voertuigwaarderingsrapport</h2>
+<p><strong>Rapportdatum:</strong> <span id="reportDate"></span></p>
+<p>Indicatieve marktwaardering op basis van voertuiggegevens en vergelijkbare advertenties.</p>
+<hr>
+</div>
+
 <section>
 <p>Voertuigidentificatie, marktwaardering en douanedossier.</p>
 <small>Gegevens worden lokaal in deze browser opgeslagen. Marktwaarde is niet automatisch douanewaarde.</small>
@@ -29,9 +62,11 @@ small{color:#64748b}
 
 <section>
 <h2>Voertuiggegevens</h2>
+
 <label>Kenteken</label><input id="plate">
 <label>VIN / chassisnummer</label><input id="vin">
-<button onclick="rdw()">RDW gegevens ophalen</button>
+<button onclick="rdw()" class="no-print">RDW gegevens ophalen</button>
+
 <label>Merk</label><input id="make">
 <label>Model</label><input id="model">
 <label>Voertuigcategorie</label><input id="category">
@@ -59,29 +94,38 @@ small{color:#64748b}
 
 <section>
 <h2>Marktwaardering – vergelijkbare occasions</h2>
-<p>Voeg vergelijkbare advertenties toe. Gebruik bij voorkeur hetzelfde model, bouwjaar en een vergelijkbare kilometerstand.</p>
+
+<p class="no-print">Voeg vergelijkbare advertenties toe. Gebruik bij voorkeur hetzelfde model, bouwjaar en een vergelijkbare kilometerstand.</p>
+
+<div class="no-print">
 <button onclick="searchMarket('marktplaats')">Zoek op Marktplaats</button>
 <button onclick="searchMarket('autoscout')">Zoek op AutoScout24 Nederland</button>
 <button onclick="searchMarket('mobile')">Zoek op mobile.de Duitsland</button>
 <button onclick="searchMarket('autoscoutde')">Zoek op AutoScout24 Duitsland</button>
+</div>
+
+<div class="comparable-entry">
 <label>Vraagprijs (€)</label><input id="compPrice" type="number">
 <label>Bouwjaar</label><input id="compYear" type="number">
 <label>Kilometerstand</label><input id="compKm" type="number">
 <label>Bron / advertentielink</label><input id="compSource" type="url">
 <button onclick="addComparable()">Vergelijkbare auto toevoegen</button>
+</div>
+
 <div id="comparables"></div>
 <div class="result" id="valuation">Nog geen vergelijkingsgegevens ingevoerd.</div>
+
 <small>Dit is een indicatieve vergelijking van vraagprijzen, geen onafhankelijke taxatie of douanewaardebepaling.</small>
 </section>
 
-<section>
+<section class="no-print">
 <h2>Dossierbeheer</h2>
 <button onclick="save()">Dossier opslaan</button>
 <button onclick="exportCSV()">Export CSV</button>
-<button onclick="window.print()">Print / PDF</button>
+<button onclick="printReport()">Print / PDF</button>
 </section>
 
-<section>
+<section class="no-print">
 <h2>Opgeslagen dossiers</h2>
 <div id="records"></div>
 </section>
@@ -92,18 +136,34 @@ small{color:#64748b}
 <p><strong>Artikel 71 DWU:</strong> verplichte bijtellingen.</p>
 <p><strong>Artikel 72 DWU:</strong> uitgesloten elementen.</p>
 <p><strong>Artikel 74 DWU:</strong> subsidiaire waarderingsmethoden.</p>
-<p>Een advertentieprijs of marktwaarde is niet automatisch douanewaarde.</p>
+<p>Een advertentieprijs of marktwaarde is niet automatisch douanewaarde. De douanewaarde wordt vastgesteld volgens de toepasselijke bepalingen van het Douanewetboek van de Unie.</p>
 </section>
+
+<div class="print-only">
+<hr>
+<p><strong>Disclaimer</strong></p>
+<p>Dit rapport bevat een indicatieve marktvergelijking op basis van ingevoerde voertuiggegevens en opgegeven advertentieprijzen. Vraagprijzen zijn geen gegarandeerde transactieprijzen. Dit rapport is geen onafhankelijke taxatie en vormt op zichzelf geen vaststelling van de douanewaarde.</p>
+<p>De douanewaarde moet afzonderlijk worden vastgesteld overeenkomstig de toepasselijke douanewetgeving.</p>
+</div>
+
 </main>
 
 <script>
 const $=id=>document.getElementById(id);
-const fields=['plate','vin','make','model','category','body','color','seats','cylinders','displacement','weight','readyWeight','catalogPrice','apk','first','km','fuel','trade','retail','bpm','price','incoterm','transport','insurance','notes'];
+
+const fields=[
+'plate','vin','make','model','category','body','color',
+'seats','cylinders','displacement','weight','readyWeight',
+'catalogPrice','apk','first','km','fuel','trade','retail',
+'bpm','price','incoterm','transport','insurance','notes'
+];
+
 let records=JSON.parse(localStorage.getItem('vva_records')||'[]');
 let comparables=JSON.parse(localStorage.getItem('vva_comparables')||'[]');
 
 async function rdw(){
 let p=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+
 if(!p)return alert('Vul een kenteken in');
 
 try{
@@ -157,6 +217,7 @@ alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
 alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
 }
 }
+
 async function searchMarket(site){
 let make=$('make').value.trim();
 let model=$('model').value.trim();
@@ -190,38 +251,51 @@ autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encod
 if(!urls[site])return;
 window.location.href=urls[site];
 }
+
 function addComparable(){
 let price=Number($('compPrice').value);
+
 if(!price)return alert('Vul een vraagprijs in.');
+
 comparables.push({
 price,
 year:$('compYear').value,
 km:$('compKm').value,
 source:$('compSource').value
 });
+
 localStorage.setItem('vva_comparables',JSON.stringify(comparables));
+
 $('compPrice').value='';
 $('compYear').value='';
 $('compKm').value='';
 $('compSource').value='';
+
 renderComparables();
 }
 
 function renderComparables(){
 $('comparables').innerHTML=comparables.map((c,i)=>
-'<div class="comparable"><strong>€ '+c.price.toLocaleString('nl-NL')+
-'</strong> – '+(c.year||'bouwjaar onbekend')+
-' – '+(c.km||'km onbekend')+' km '+
-(c.source?'<br><a href="'+escapeHtml(c.source)+'" target="_blank">Advertentie bekijken</a>':'')+
-'<br><button onclick="removeComparable('+i+')">Verwijderen</button></div>'
+'<div class="comparable"><strong>€ '+
+Number(c.price).toLocaleString('nl-NL')+
+'</strong> – '+escapeHtml(c.year||'bouwjaar onbekend')+
+' – '+escapeHtml(c.km||'km onbekend')+' km '+
+(c.source?'<br><a href="'+escapeHtml(c.source)+'" target="_blank" rel="noopener">Advertentie bekijken</a>':'')+
+'<br><button class="no-print" onclick="removeComparable('+i+')">Verwijderen</button></div>'
 ).join('');
+
 if(comparables.length){
-let prices=comparables.map(c=>c.price).sort((a,b)=>a-b);
+let prices=comparables.map(c=>Number(c.price)).filter(n=>n>0).sort((a,b)=>a-b);
+
+if(prices.length){
 let avg=prices.reduce((a,b)=>a+b,0)/prices.length;
-$('valuation').innerHTML='<strong>Aantal vergelijkingen:</strong> '+prices.length+
+
+$('valuation').innerHTML=
+'<strong>Aantal vergelijkingen:</strong> '+prices.length+
 '<br><strong>Laagste vraagprijs:</strong> € '+prices[0].toLocaleString('nl-NL')+
 '<br><strong>Gemiddelde vraagprijs:</strong> € '+Math.round(avg).toLocaleString('nl-NL')+
 '<br><strong>Hoogste vraagprijs:</strong> € '+prices[prices.length-1].toLocaleString('nl-NL');
+}
 }else{
 $('valuation').textContent='Nog geen vergelijkingsgegevens ingevoerd.';
 }
@@ -234,16 +308,27 @@ renderComparables();
 }
 
 function escapeHtml(s){
-return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+return String(s).replace(/[&<>"']/g,c=>({
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#39;'
+}[c]));
 }
 
 function save(){
 let v={};
+
 fields.forEach(k=>v[k]=$(k).value);
 v.comparables=comparables;
+
 if(!v.plate&&!v.vin)return alert('Vul kenteken of VIN in');
+
 records.push(v);
+
 localStorage.setItem('vva_records',JSON.stringify(records));
+
 render();
 alert('Dossier opgeslagen');
 }
@@ -257,11 +342,22 @@ escapeHtml(v.make||'')+' '+escapeHtml(v.model||'')+'</p>'
 
 function exportCSV(){
 let q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
-let csv=[fields.map(q).join(';'),...records.map(v=>fields.map(k=>q(v[k])).join(';'))].join('\n');
+
+let csv=[
+fields.map(q).join(';'),
+...records.map(v=>fields.map(k=>q(v[k])).join(';'))
+].join('\n');
+
 let a=document.createElement('a');
 a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
 a.download='VVA-voertuigen.csv';
 a.click();
+URL.revokeObjectURL(a.href);
+}
+
+function printReport(){
+$('reportDate').textContent=new Date().toLocaleDateString('nl-NL');
+window.print();
 }
 
 render();
