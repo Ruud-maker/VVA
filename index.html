@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -16,7 +17,6 @@ small{color:#64748b}
 .result{background:#eaf1f8;padding:12px;border-radius:8px;margin:10px 0}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
 .print-only{display:none}
-
 @page{size:A4;margin:16mm}
 
 @media print{
@@ -50,7 +50,7 @@ h1,h2,h3{break-after:avoid}
 <div class="print-only" style="margin-bottom:18px">
 <h2>Voertuigwaarderingsrapport</h2>
 <p><strong>Rapportdatum:</strong> <span id="reportDate"></span></p>
-<p>Indicatieve marktwaardering op basis van voertuiggegevens en vergelijkbare advertenties.</p>
+<p>Voertuigwaardering, marktvergelijking en indicatieve douanewaarde.</p>
 <hr>
 </div>
 
@@ -81,14 +81,22 @@ h1,h2,h3{break-after:avoid}
 <label>Eerste toelating</label><input id="first">
 <label>Kilometerstand</label><input id="km" type="number">
 <label>Brandstof</label><input id="fuel">
+
+<h3>Voertuigwaardering</h3>
 <label>Handelsinkoopwaarde (€)</label><input id="trade" type="number">
 <label>Verkoopwaarde (€)</label><input id="retail" type="number">
 <label>Rest-BPM (€)</label><input id="bpm" type="number">
+
+<h3>Douanewaarde</h3>
 <label>Transactieprijs (€)</label><input id="price" type="number">
 <label>Incoterm</label><input id="incoterm">
-<label>Transport tot EU-grens (€)</label><input id="transport" type="number">
-<label>Verzekering tot EU-grens (€)</label><input id="insurance" type="number">
-<label>Bronnen en opmerkingen</label><textarea id="notes"></textarea>
+<label>Transport tot plaats van binnenkomst EU (€)</label><input id="transport" type="number">
+<label>Verzekering tot plaats van binnenkomst EU (€)</label><input id="insurance" type="number">
+<label>Overige toepasselijke bijtellingen artikel 71 DWU (€)</label><input id="customsAdditions" type="number">
+<label>Eventuele kosten na binnenkomst EU (€)</label><input id="postImportCosts" type="number">
+
+<label>Bronnen en opmerkingen</label>
+<textarea id="notes"></textarea>
 </section>
 
 <section>
@@ -117,6 +125,14 @@ h1,h2,h3{break-after:avoid}
 <small>Dit is een indicatieve vergelijking van vraagprijzen, geen onafhankelijke taxatie of douanewaardebepaling.</small>
 </section>
 
+<section>
+<h2>Waarderingssamenvatting</h2>
+<div class="result" id="valuationSummary">
+Vul de waarderingsgegevens in om de samenvatting te berekenen.
+</div>
+<p><small>De handelswaarde en verkoopwaarde zijn handmatig ingevoerde waarden. De marktindicatie is gebaseerd op ingevoerde vraagprijzen. De douanewaarde wordt afzonderlijk beoordeeld volgens de toepasselijke bepalingen van het DWU.</small></p>
+</section>
+
 <section class="no-print">
 <h2>Dossierbeheer</h2>
 <button onclick="save()">Dossier opslaan</button>
@@ -135,14 +151,14 @@ h1,h2,h3{break-after:avoid}
 <p><strong>Artikel 71 DWU:</strong> verplichte bijtellingen.</p>
 <p><strong>Artikel 72 DWU:</strong> uitgesloten elementen.</p>
 <p><strong>Artikel 74 DWU:</strong> subsidiaire waarderingsmethoden.</p>
-<p>Een advertentieprijs of marktwaarde is niet automatisch douanewaarde. De douanewaarde wordt vastgesteld volgens de toepasselijke bepalingen van het Douanewetboek van de Unie.</p>
+<p>Een advertentieprijs, handelswaarde of verkoopwaarde is niet automatisch douanewaarde. De transactiewaarde moet aan de wettelijke voorwaarden voldoen. Bij ontbreken daarvan moeten de subsidiaire waarderingsmethoden worden onderzocht.</p>
 </section>
 
 <div class="print-only">
 <hr>
 <p><strong>Disclaimer</strong></p>
 <p>Dit rapport bevat een indicatieve marktvergelijking op basis van ingevoerde voertuiggegevens en opgegeven advertentieprijzen. Vraagprijzen zijn geen gegarandeerde transactieprijzen. Dit rapport is geen onafhankelijke taxatie en vormt op zichzelf geen vaststelling van de douanewaarde.</p>
-<p>De douanewaarde moet afzonderlijk worden vastgesteld overeenkomstig de toepasselijke douanewetgeving.</p>
+<p>De douanewaarde moet afzonderlijk worden vastgesteld overeenkomstig de toepasselijke douanewetgeving. De berekening in dit rapport is uitsluitend een hulpmiddel en geen juridisch bindende vaststelling.</p>
 </div>
 
 </main>
@@ -154,7 +170,8 @@ const fields=[
 'plate','vin','make','model','category','body','color',
 'seats','cylinders','displacement','weight','readyWeight',
 'catalogPrice','apk','first','km','fuel','trade','retail',
-'bpm','price','incoterm','transport','insurance','notes'
+'bpm','price','incoterm','transport','insurance',
+'customsAdditions','postImportCosts','notes'
 ];
 
 let records=JSON.parse(localStorage.getItem('vva_records')||'[]');
@@ -211,7 +228,6 @@ fuelRows.map(x=>x.brandstof_omschrijving).filter(Boolean)
 }
 
 alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
-
 }catch(e){
 alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
 }
@@ -298,12 +314,69 @@ $('valuation').innerHTML=
 }else{
 $('valuation').textContent='Nog geen vergelijkingsgegevens ingevoerd.';
 }
+
+updateValuation();
 }
 
 function removeComparable(i){
 comparables.splice(i,1);
 localStorage.setItem('vva_comparables',JSON.stringify(comparables));
 renderComparables();
+}
+
+function updateValuation(){
+const money=n=>'€ '+Number(n).toLocaleString('nl-NL',{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+});
+
+const entered=id=>Number($(id).value)||0;
+
+const trade=entered('trade');
+const retail=entered('retail');
+const transaction=entered('price');
+const transport=entered('transport');
+const insurance=entered('insurance');
+const additions=entered('customsAdditions');
+const postImport=entered('postImportCosts');
+
+const prices=comparables.map(c=>Number(c.price))
+.filter(n=>n>0).sort((a,b)=>a-b);
+
+let html=
+'<strong>Handelswaarde:</strong> '+
+(trade>0?money(trade):'Niet ingevuld')+'<br>'+
+'<strong>Verkoopwaarde:</strong> '+
+(retail>0?money(retail):'Niet ingevuld')+'<br>'+
+'<strong>Marktindicatie op basis van '+prices.length+' advertenties:</strong> ';
+
+html+=prices.length
+?money(prices[0])+' laag – '+
+money(prices.reduce((a,b)=>a+b,0)/prices.length)+
+' gemiddeld – '+money(prices[prices.length-1])+' hoog'
+:'Nog geen vergelijkbare advertenties';
+
+html+='<hr><strong>Indicatieve douanewaarde:</strong><br>';
+
+if(transaction>0){
+const customs=transaction+transport+insurance+additions;
+
+html+='<strong>'+money(customs)+'</strong><br>'+
+'<small>Transactieprijs '+money(transaction)+
+' + transport '+money(transport)+
+' + verzekering '+money(insurance)+
+' + overige bijtellingen '+money(additions)+'.</small>';
+}else{
+html+='Niet berekend: vul eerst de transactieprijs in.';
+}
+
+html+='<br><small>Eventuele kosten na binnenkomst EU: '+
+money(postImport)+
+'. Deze kosten worden niet automatisch afgetrokken. Controleer eerst of en onder welke voorwaarden zij volgens de douanewetgeving buiten de douanewaarde mogen blijven.</small>';
+
+html+='<br><br><strong>Let op:</strong> deze berekening is alleen bruikbaar als de transactiewaardemethode van toepassing is en alle bedragen correct zijn vastgesteld. Controleer onder meer de voorwaarden van artikel 70 DWU, de bijtellingen van artikel 71 DWU en de uitsluitingen van artikel 72 DWU. Voorkom dubbele telling van kosten.';
+
+$('valuationSummary').innerHTML=html;
 }
 
 function escapeHtml(s){
@@ -351,16 +424,26 @@ let a=document.createElement('a');
 a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
 a.download='VVA-voertuigen.csv';
 a.click();
-URL.revokeObjectURL(a.href);
+
+setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
 function printReport(){
 $('reportDate').textContent=new Date().toLocaleDateString('nl-NL');
+updateValuation();
 window.print();
 }
 
 render();
 renderComparables();
+
+[
+'trade','retail','price','transport','insurance',
+'customsAdditions','postImportCosts'
+].forEach(id=>{
+$(id).addEventListener('input',updateValuation);
+});
+
 </script>
 </body>
 </html>
