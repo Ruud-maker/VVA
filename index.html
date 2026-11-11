@@ -175,7 +175,7 @@ mobile:'https://www.mobile.de/auto/search.html?vc=Car&dam=false&kw='+query,
 autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encodeURIComponent(model)
 };
 
-window.open(urls[site],'_blank');
+window.location.href=urls[site];
 }
 function addComparable(){
 let price=Number($('compPrice').value);
