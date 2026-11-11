@@ -158,23 +158,27 @@ alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.
 }
 }
 function searchMarket(site){
+function searchMarket(site){
 let make=$('make').value.trim();
 let model=$('model').value.trim();
 let year=$('first').value.trim().slice(0,4);
 
 if(!make&&!model){
-return alert('Vul eerst merk en model in.');
+alert('Vul eerst merk en model in.');
+return;
 }
 
-window.location.href=urls[site];
+let searchTerms=[make,model,year].filter(Boolean).join(' ');
+let query=encodeURIComponent(searchTerms).replace(/%20/g,'+');
 
 let urls={
 marktplaats:'https://www.marktplaats.nl/q/'+query+'/',
 autoscout:'https://www.autoscout24.nl/lst/'+encodeURIComponent(make)+'/'+encodeURIComponent(model),
-mobile:'https://www.mobile.de/auto/search.html?vc=Car&dam=false&kw='+query,
+mobile:'https://www.mobile.de/auto/search.html?vc=Car&kw='+query,
 autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encodeURIComponent(model)
 };
 
+if(!urls[site])return;
 window.location.href=urls[site];
 }
 function addComparable(){
