@@ -177,7 +177,8 @@ autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encod
 
 window.open(urls[site],'_blank');
 }
-searchMarket(site)function addComparable(){
+searchMarket(site){
+function addComparable(){
 let price=Number($('compPrice').value);
 if(!price)return alert('Vul een vraagprijs in.');
 comparables.push({
