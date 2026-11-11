@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicle Valuation Assistant</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;margin:0}
+header{background:#17365d;color:white;padding:22px}
+main{max-width:900px;margin:20px auto;padding:12px}
+section{background:white;padding:18px;border-radius:12px;margin-bottom:15px}
+input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;box-sizing:border-box;border:1px solid #ccc;border-radius:6px}
+button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px}
+small{color:#64748b}
+</style>
+</head>
+<body>
+<header>
+<h1>Vehicle Valuation Assistant</h1>
+<p>European Vehicle Valuation & Customs Intelligence</p>
+</header>
+<main>
+<section>
+<strong>Gratis VVA-prototype</strong>
+<p>Voertuigidentificatie, waardering en douanedossier.</p>
+<small>Gegevens worden lokaal in deze browser opgeslagen. Geen formele douanewaardebepaling.</small>
+</section>
+<section>
+<h2>Voertuiggegevens</h2>
+<label>Kenteken</label><input id="plate">
+<label>VIN / chassisnummer</label><input id="vin">
+<button onclick="rdw()">RDW gegevens ophalen</button>
+<label>Merk</label><input id="make">
+<label>Model</label><input id="model">
+<label>Voertuigcategorie</label><input id="category">
+<label>Eerste toelating</label><input id="first">
+<label>Kilometerstand</label><input id="km" type="number">
+<label>Brandstof</label><input id="fuel">
+<label>Handelsinkoopwaarde (€)</label><input id="trade" type="number">
+<label>Verkoopwaarde (€)</label><input id="retail" type="number">
+<label>Rest-BPM (€)</label><input id="bpm" type="number">
+<label>Transactieprijs (€)</label><input id="price" type="number">
+<label>Incoterm</label><input id="incoterm">
+<label>Transport tot EU-grens (€)</label><input id="transport" type="number">
+<label>Verzekering tot EU-grens (€)</label><input id="insurance" type="number">
+<label>Bronnen en opmerkingen</label><textarea id="notes"></textarea>
+<button onclick="save()">Dossier opslaan</button>
+<button onclick="exportCSV()">Export CSV</button>
+<button onclick="window.print()">Print / PDF</button>
+</section>
+<section>
+<h2>Opgeslagen dossiers</h2>
+<div id="records"></div>
+</section>
+<section>
+<h3>Douanewaarde – juridische toets</h3>
+<p>Artikel 70 DWU: transactiewaarde als hoofdregel.</p>
+<p>Artikel 71 DWU: verplichte bijtellingen.</p>
+<p>Artikel 72 DWU: aftrekposten.</p>
+<p>Artikel 74 DWU: subsidiaire waarderingsmethoden.</p>
+<p>Een advertentieprijs of marktwaarde is niet automatisch douanewaarde.</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fields=['plate','vin','make','model','category','first','km','fuel','trade','retail','bpm','price','incoterm','transport','insurance','notes'];
+let records=JSON.parse(localStorage.getItem('vva_records')||'[]');
+async function rdw(){
+let p=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+if(!p)return alert('Vul een kenteken in');
+try{
+let u="https://opendata.rdw.nl/resource/m9d7-ebf2.json?$where="+encodeURIComponent("kenteken='"+p+"'")+"&$limit=1";
+let r=await fetch(u),a=await r.json();
+if(!a.length)throw Error('Kenteken niet gevonden');
+$('make').value=a[0].merk||'';
+$('model').value=a[0].handelsbenaming||'';
+$('first').value=a[0].datum_eerste_toelating||'';
+alert('RDW-gegevens opgehaald. Controleer de gegevens.');
+}catch(e){alert('RDW niet bereikbaar. Vul handmatig in.')}
+}
+function save(){
+let v={};fields.forEach(k=>v[k]=$(k).value);
+if(!v.plate&&!v.vin)return alert('Vul kenteken of VIN in');
+records.push(v);
+localStorage.setItem('vva_records',JSON.stringify(records));
+render();
+alert('Dossier opgeslagen');
+}
+function render(){
+$('records').innerHTML=records.map((v,i)=>'<p>'+(i+1)+'. '+v.plate+' – '+v.make+' '+v.model+'</p>').join('');
+}
+function exportCSV(){
+let q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+let csv=[fields.map(q).join(';'),...records.map(v=>fields.map(k=>q(v[k])).join(';'))].join('\n');
+let a=document.createElement('a');
+a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+a.download='VVA-voertuigen.csv';a.click();
+}
+render();
+</script>
+</body>
+</html>
