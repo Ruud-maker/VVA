@@ -60,6 +60,10 @@ small{color:#64748b}
 <section>
 <h2>Marktwaardering – vergelijkbare occasions</h2>
 <p>Voeg vergelijkbare advertenties toe. Gebruik bij voorkeur hetzelfde model, bouwjaar en een vergelijkbare kilometerstand.</p>
+<button onclick="searchMarket('marktplaats')">Zoek op Marktplaats</button>
+<button onclick="searchMarket('autoscout')">Zoek op AutoScout24 Nederland</button>
+<button onclick="searchMarket('mobile')">Zoek op mobile.de Duitsland</button>
+<button onclick="searchMarket('autoscoutde')">Zoek op AutoScout24 Duitsland</button>
 <label>Vraagprijs (€)</label><input id="compPrice" type="number">
 <label>Bouwjaar</label><input id="compYear" type="number">
 <label>Kilometerstand</label><input id="compKm" type="number">
@@ -153,8 +157,27 @@ alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
 alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
 }
 }
+function searchMarket(site){
+let make=$('make').value.trim();
+let model=$('model').value.trim();
+let year=$('first').value.trim().slice(0,4);
 
-function addComparable(){
+if(!make&&!model){
+return alert('Vul eerst merk en model in.');
+}
+
+let query=encodeURIComponent([make,model,year].filter(Boolean).join(' '));
+
+let urls={
+marktplaats:'https://www.marktplaats.nl/q/'+query+'/',
+autoscout:'https://www.autoscout24.nl/lst/'+encodeURIComponent(make)+'/'+encodeURIComponent(model),
+mobile:'https://www.mobile.de/auto/search.html?vc=Car&dam=false&kw='+query,
+autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encodeURIComponent(model)
+};
+
+window.open(urls[site],'_blank');
+}
+searchMarket(site)function addComparable(){
 let price=Number($('compPrice').value);
 if(!price)return alert('Vul een vraagprijs in.');
 comparables.push({
