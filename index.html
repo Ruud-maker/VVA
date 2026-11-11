@@ -166,7 +166,7 @@ if(!make&&!model){
 return alert('Vul eerst merk en model in.');
 }
 
-let query=encodeURIComponent([make,model,year].filter(Boolean).join(' '));
+window.location.href=urls[site];
 
 let urls={
 marktplaats:'https://www.marktplaats.nl/q/'+query+'/',
