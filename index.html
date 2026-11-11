@@ -157,7 +157,7 @@ alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
 alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
 }
 }
-
+function searchMarket(site){
 let make=$('make').value.trim();
 let model=$('model').value.trim();
 let year=$('first').value.trim().slice(0,4);
@@ -177,7 +177,6 @@ autoscoutde:'https://www.autoscout24.de/lst/'+encodeURIComponent(make)+'/'+encod
 
 window.open(urls[site],'_blank');
 }
-searchMarket(site){
 function addComparable(){
 let price=Number($('compPrice').value);
 if(!price)return alert('Vul een vraagprijs in.');
