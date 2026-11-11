@@ -101,15 +101,57 @@ let comparables=JSON.parse(localStorage.getItem('vva_comparables')||'[]');
 async function rdw(){
 let p=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
 if(!p)return alert('Vul een kenteken in');
+
 try{
-let u="https://opendata.rdw.nl/resource/m9d7-ebf2.json?$where="+encodeURIComponent("kenteken='"+p+"'")+"&$limit=1";
-let r=await fetch(u),a=await r.json();
+let base='https://opendata.rdw.nl/resource/';
+let query=new URLSearchParams({
+'$where':"kenteken='"+p+"'",
+'$limit':'1'
+});
+
+let r=await fetch(base+'m9d7-ebf2.json?'+query);
+if(!r.ok)throw Error();
+
+let a=await r.json();
 if(!a.length)throw Error();
-$('make').value=a[0].merk||'';
-$('model').value=a[0].handelsbenaming||'';
-$('first').value=a[0].datum_eerste_toelating||'';
-alert('RDW-gegevens opgehaald. Controleer de gegevens.');
-}catch(e){alert('RDW niet bereikbaar. Vul handmatig in.')}
+
+let v=a[0];
+
+$('make').value=v.merk||'';
+$('model').value=v.handelsbenaming||'';
+$('category').value=v.voertuigsoort||'';
+$('body').value=v.inrichting||'';
+$('color').value=[v.eerste_kleur,v.tweede_kleur].filter(Boolean).join(' / ');
+$('seats').value=v.aantal_zitplaatsen||'';
+$('cylinders').value=v.aantal_cilinders||'';
+$('displacement').value=v.cilinderinhoud||'';
+$('weight').value=v.massa_ledig_voertuig||'';
+$('readyWeight').value=v.massa_rijklaar||'';
+$('catalogPrice').value=v.catalogusprijs||'';
+$('apk').value=v.vervaldatum_apk||'';
+$('first').value=v.datum_eerste_toelating||'';
+
+let fq=new URLSearchParams({
+'$where':"kenteken='"+p+"'",
+'$limit':'5'
+});
+
+let fr=await fetch(base+'8ys7-d773.json?'+fq);
+
+if(fr.ok){
+let fuelRows=await fr.json();
+if(fuelRows.length){
+$('fuel').value=[...new Set(
+fuelRows.map(x=>x.brandstof_omschrijving).filter(Boolean)
+)].join(' / ');
+}
+}
+
+alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
+
+}catch(e){
+alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
+}
 }
 
 function addComparable(){
