@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -12,7 +13,7 @@ main{max-width:900px;margin:20px auto;padding:12px}
 section{background:white;padding:18px;border-radius:12px;margin-bottom:15px}
 input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;border:1px solid #ccc;border-radius:6px}
 button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
-button[onclick="rdw()"]{display:block}
+button[onclick="rdw()"],button[onclick="decodeVin()"]{display:block}
 small{color:#64748b}
 .result{background:#eaf1f8;padding:12px;border-radius:8px;margin:10px 0}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
@@ -63,7 +64,11 @@ h1,h2,h3{break-after:avoid}
 <h2>Voertuiggegevens</h2>
 
 <label>Kenteken</label><input id="plate">
-<label>VIN / chassisnummer</label><input id="vin">
+<label>VIN / chassisnummer</label><input id="vin" maxlength="17" autocapitalize="characters">
+
+<button onclick="decodeVin()" class="no-print">VIN-gegevens ophalen</button>
+<small>Gratis VIN-decoder. Europese voertuigen worden mogelijk niet volledig herkend.</small>
+
 <button onclick="rdw()" class="no-print">RDW gegevens ophalen</button>
 
 <label>Merk</label><input id="make">
@@ -176,6 +181,72 @@ const fields=[
 
 let records=JSON.parse(localStorage.getItem('vva_records')||'[]');
 let comparables=JSON.parse(localStorage.getItem('vva_comparables')||'[]');
+
+async function decodeVin(){
+let vin=$('vin').value.toUpperCase().replace(/\s/g,'');
+
+$('vin').value=vin;
+
+if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){
+alert('Vul een geldig VIN van 17 tekens in. De letters I, O en Q zijn niet toegestaan.');
+return;
+}
+
+try{
+let url='https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(vin)+'?format=json';
+
+let response=await fetch(url);
+
+if(!response.ok)throw Error('VIN-service niet bereikbaar');
+
+let data=await response.json();
+let v=data.Results&&data.Results[0];
+
+if(!v)throw Error('Geen resultaat ontvangen');
+
+let filled=[];
+
+function fillIfAvailable(id,value){
+if(value && value!=='Not Applicable' && value!=='0' && !$ (id).value.trim()){
+$(id).value=value;
+filled.push(id);
+}
+}
+
+fillIfAvailable('make',v.Make);
+fillIfAvailable('model',v.Model);
+fillIfAvailable('category',v.VehicleType);
+fillIfAvailable('body',v.BodyClass);
+fillIfAvailable('fuel',v.FuelTypePrimary);
+fillIfAvailable('cylinders',v.EngineCylinders);
+
+if(v.DisplacementL && Number(v.DisplacementL)>0 && !$('displacement').value){
+$('displacement').value=Math.round(Number(v.DisplacementL)*1000);
+filled.push('displacement');
+}
+
+let details=[];
+if(v.ModelYear)details.push('Modeljaar: '+v.ModelYear);
+if(v.PlantCountry)details.push('Productieland: '+v.PlantCountry);
+if(v.ErrorText && v.ErrorText!=='0')details.push('Decoderinformatie: '+v.ErrorText);
+
+if(details.length){
+let existing=$('notes').value.trim();
+$('notes').value=(existing?existing+'\n':'')+
+'VIN-decoder: '+details.join(' | ');
+}
+
+if(filled.length){
+alert('VIN-decoder klaar. Ingevuld: '+filled.join(', ')+
+'. Controleer de gegevens. Niet beschikbare velden blijven ongewijzigd.');
+}else{
+alert('VIN is verwerkt, maar de decoder heeft geen nieuwe voertuiggegevens gevonden. Dit komt regelmatig voor bij Europese voertuigen.');
+}
+
+}catch(e){
+alert('VIN-decoder niet bereikbaar of geen gegevens beschikbaar. Controleer het VIN of vul de voertuiggegevens handmatig in.');
+}
+}
 
 async function rdw(){
 let p=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
