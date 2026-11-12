@@ -12,7 +12,7 @@ main{max-width:900px;margin:20px auto;padding:12px}
 section{background:white;padding:18px;border-radius:12px;margin-bottom:15px}
 input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;border:1px solid #ccc;border-radius:6px}
 button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
-button[onclick="rdw()"],button[onclick="decodeVin()"],button[onclick="fillEx30()"]{display:block}
+button[onclick="rdw()"],button[onclick="decodeVin()"]{display:block}
 small{color:#64748b}
 .result{background:#eaf1f8;padding:12px;border-radius:8px;margin:10px 0}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
@@ -63,8 +63,6 @@ h1,h2,h3{break-after:avoid}
 <button onclick="decodeVin()" class="no-print">VIN-gegevens ophalen</button>
 <small>Gratis VIN-decoder. Europese voertuigen worden mogelijk niet volledig herkend.</small>
 <button onclick="rdw()" class="no-print">RDW gegevens ophalen</button>
-<button onclick="fillEx30()" class="no-print">Volvo EX30 Extended Range gegevens aanvullen</button>
-<small>Vult bekende fabrieksgegevens van de EX30 Single Motor Extended Range (modeljaar 2024) aan. Dit zijn modelgegevens, geen VIN-bevestigde voertuiggegevens.</small>
 
 <label>Merk</label><input id="make">
 <label>Model</label><input id="model">
@@ -173,40 +171,6 @@ const fields=[
 
 let records=JSON.parse(localStorage.getItem('vva_records')||'[]');
 let comparables=JSON.parse(localStorage.getItem('vva_comparables')||'[]');
-
-function fillEx30(){
-const data={
-make:'Volvo',
-model:'EX30 Single Motor Extended Range',
-category:'Personenauto',
-body:'SUV, 5-deurs',
-seats:'5',
-fuel:'Elektrisch',
-drivetrain:'Achterwielaandrijving (RWD)',
-battery:'69',
-power:'200',
-torque:'343',
-range:'480'
-};
-
-let filled=[];
-Object.entries(data).forEach(([id,value])=>{
-if($(id) && !$(id).value.trim()){
-$(id).value=value;
-filled.push(id);
-}
-});
-
-let note='Modelgegevens Volvo EX30 Single Motor Extended Range MY2024: 69 kWh bruto (circa 64 kWh bruikbaar), 200 kW (272 pk), 343 Nm, achterwielaandrijving en WLTP-actieradius tot circa 480 km. Modelgegevens op basis van fabrieksinformatie; niet individueel bevestigd via VIN. Controleer uitvoering, CoC en voertuigdocumenten.';
-
-if(!$('notes').value.includes('Modelgegevens Volvo EX30')){
-$('notes').value=($('notes').value.trim()?$('notes').value.trim()+'\n':'')+note;
-}
-
-alert(filled.length
-?'EX30-modelgegevens aangevuld: '+filled.join(', ')+'. Bestaande waarden zijn niet overschreven. Controleer de gegevens.'
-:'De EX30-velden waren al ingevuld. Er zijn geen waarden overschreven.');
-}
 
 async function decodeVin(){
 let vin=$('vin').value.toUpperCase().replace(/\s/g,'');
