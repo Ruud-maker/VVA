@@ -13,6 +13,7 @@ main{max-width:900px;margin:20px auto;padding:12px}
 section{background:white;padding:18px;border-radius:12px;margin-bottom:15px}
 input,textarea{display:block;width:100%;padding:11px;margin:6px 0 14px;border:1px solid #ccc;border-radius:6px}
 button{padding:12px;background:#17365d;color:white;border:0;border-radius:7px;margin:5px;cursor:pointer}
+button[onclick="rdw()"]{display:block}
 small{color:#64748b}
 .result{background:#eaf1f8;padding:12px;border-radius:8px;margin:10px 0}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
@@ -130,7 +131,7 @@ h1,h2,h3{break-after:avoid}
 <div class="result" id="valuationSummary">
 Vul de waarderingsgegevens in om de samenvatting te berekenen.
 </div>
-<p><small>De handelswaarde en verkoopwaarde zijn handmatig ingevoerde waarden. De marktindicatie is gebaseerd op ingevoerde vraagprijzen. De douanewaarde wordt afzonderlijk beoordeeld volgens de toepasselijke bepalingen van het DWU.</small></p>
+<p><small>De handelsinkoopwaarde en verkoopwaarde zijn handmatig ingevoerde waarden. De marktindicatie is gebaseerd op ingevoerde vraagprijzen. De douanewaarde wordt afzonderlijk beoordeeld volgens de toepasselijke bepalingen van het DWU.</small></p>
 </section>
 
 <section class="no-print">
@@ -344,7 +345,7 @@ const prices=comparables.map(c=>Number(c.price))
 .filter(n=>n>0).sort((a,b)=>a-b);
 
 let html=
-'<strong>Handelswaarde:</strong> '+
+'<strong>Handelsinkoopwaarde:</strong> '+
 (trade>0?money(trade):'Niet ingevuld')+'<br>'+
 '<strong>Verkoopwaarde:</strong> '+
 (retail>0?money(retail):'Niet ingevuld')+'<br>'+
