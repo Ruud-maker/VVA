@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -59,7 +60,6 @@ footer strong{color:var(--navy);letter-spacing:2px}
 @page{size:A4;margin:15mm}
 @media print{header,nav,.actions,.no-print,footer{display:none!important}body{background:#fff;color:#111}main{max-width:none;padding:0}section,.panel{display:block!important;border:0;box-shadow:none;border-radius:0;padding:10px 0;margin:0;break-inside:avoid}.print-only{display:block}input,textarea{border:0;border-bottom:1px solid #ddd;border-radius:0;padding:2px 0;margin:1px 0 6px;background:#fff;color:#111;font-size:9.5pt}.result{background:#fff;border:1px solid #aaa}small{color:#333}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -190,7 +190,7 @@ footer strong{color:var(--navy);letter-spacing:2px}
 <div class="actions">
 <button onclick="save()">Dossier opslaan</button>
 <button class="secondary" onclick="exportCSV()">Export CSV</button>
-<button class="secondary" onclick="makePDF()">PDF-rapport maken</button>
+<button class="secondary" onclick="printReport()">Print / PDF</button>
 <button class="secondary" onclick="newRecord()">Nieuw / leeg dossier</button>
 </div>
 <p class="muted"><small>Dossiers worden lokaal in deze browser op dit apparaat bewaard. Ze worden niet automatisch gesynchroniseerd met andere apparaten.</small></p>
@@ -549,89 +549,6 @@ function exportCSV(){
  a.download='VVA-dossiers.csv';
  a.click();
  setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-
-function makePDF(){
- if(!window.jspdf||!window.jspdf.jsPDF){
-  alert('De PDF-module kon niet worden geladen. Controleer je internetverbinding en probeer opnieuw.');
-  return;
- }
- updateValuation();
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF({unit:'mm',format:'a4'});
- const left=15,right=195;
- let y=18;
- const pageBottom=280;
- const safe=v=>String(v??'').trim()||'—';
- const addLine=(label,value)=>{
-  const lines=doc.splitTextToSize(label+': '+safe(value),right-left);
-  if(y+lines.length*5>pageBottom){doc.addPage();y=18;}
-  doc.text(lines,left,y);y+=lines.length*5;
- };
- const heading=t=>{
-  if(y+10>pageBottom){doc.addPage();y=18;}
-  y+=3;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text(t,left,y);y+=7;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
- };
- doc.setFont('helvetica','bold');doc.setFontSize(18);
- doc.text('Vehicle Valuation Assistant',left,y);y+=8;
- doc.setFont('helvetica','normal');doc.setFontSize(9);
- doc.text('Rapportdatum: '+new Date().toLocaleDateString('nl-NL'),left,y);y+=8;
- heading('Voertuiggegevens');
- const labels={
-  plate:'Kenteken',vin:'VIN',make:'Merk',model:'Model',category:'Voertuigcategorie',
-  body:'Carrosserie',color:'Kleur',seats:'Zitplaatsen',doors:'Deuren',
-  cylinders:'Cilinders',displacement:'Cilinderinhoud',weight:'Massa rijklaar',
-  readyWeight:'Massa ledig',maxMass:'Toegestane maximum massa',catalogPrice:'Catalogusprijs',
-  apk:'APK',first:'Datum eerste toelating',firstNl:'Datum eerste inschrijving NL',
-  km:'Kilometerstand',fuel:'Brandstof',drivetrain:'Aandrijving',power:'Vermogen',
-  electricPower:'Elektrisch vermogen',torque:'Koppel',battery:'Accu',range:'Actieradius',
-  consumption:'Verbruik',co2:'CO2-uitstoot',emissionClass:'Emissieklasse',
-  axles:'Aantal assen',axleConfig:'Asconfiguratie',maxSpeed:'Maximumsnelheid',
-  fuelClass:'Brandstofklasse',sourceInfo:'Broninformatie'
- };
- Object.keys(labels).forEach(k=>{if($(k))addLine(labels[k],$(k).value);});
- heading('Waardebepaling');
- addLine('Handelsinkoopwaarde',money(Number($('trade').value)||0));
- addLine('Verkoopwaarde',money(Number($('retail').value)||0));
- addLine('Rest-BPM',money(Number($('bpm').value)||0));
- if(comparables.length){
-  const prices=comparables.map(c=>Number(c.price)).filter(n=>n>0);
-  addLine('Aantal vergelijkbare advertenties',prices.length);
-  if(prices.length){
-   addLine('Laagste vraagprijs',money(Math.min(...prices)));
-   addLine('Gemiddelde vraagprijs',money(prices.reduce((a,b)=>a+b,0)/prices.length));
-   addLine('Hoogste vraagprijs',money(Math.max(...prices)));
-  }
- }
- heading('Vergelijkbare advertenties');
- if(!comparables.length)addLine('Advertenties','Geen vergelijkingen ingevoerd');
- comparables.forEach((c,i)=>{
-  addLine('Advertentie '+(i+1),money(Number(c.price)||0)+' | '+safe(c.year)+' | '+safe(c.km)+' km');
-  if(c.source)addLine('Advertentielink',c.source);
- });
- heading('Indicatieve douanewaarde');
- const price=Number($('price').value)||0;
- const transport=Number($('transport').value)||0;
- const insurance=Number($('insurance').value)||0;
- const additions=Number($('customsAdditions').value)||0;
- addLine('Transactieprijs',money(price));
- addLine('Transport',money(transport));
- addLine('Verzekering',money(insurance));
- addLine('Overige bijtellingen',money(additions));
- addLine('Indicatieve douanewaarde',money(price+transport+insurance+additions));
- addLine('Incoterm',$('incoterm').value);
- addLine('Kosten na binnenkomst EU (apart)',money(Number($('postImportCosts').value)||0));
- heading('Opmerkingen');
- addLine('Notities',$('notes').value);
- heading('Juridische toelichting');
- const disclaimer='Dit rapport is een indicatieve ondersteuning en geen bindende waardevaststelling. De douanewaarde moet worden vastgesteld volgens het Douanewetboek van de Unie. Toets of de transactiewaardemethode van artikel 70 DWU kan worden toegepast en welke bijtellingen of uitsluitingen op grond van artikelen 71 en 72 DWU gelden. Als geen bruikbare transactiewaarde beschikbaar is, onderzoek de volgorde van de methoden van artikel 74 DWU. Controleer bedragen, bewijsstukken, transportkosten, verzekeringskosten en voorkom dubbele telling.';
- const disclaimerLines=doc.splitTextToSize(disclaimer,right-left);
- if(y+disclaimerLines.length*4.5>pageBottom){doc.addPage();y=18;}
- doc.setFontSize(8);doc.text(disclaimerLines,left,y);
- const id=safe($('plate').value||$('vin').value||'voertuig').replace(/[^a-zA-Z0-9_-]/g,'_');
- doc.save('VVA-rapport-'+id+'.pdf');
- status('PDF-rapport aangemaakt.');
 }
 
 function printReport(){
