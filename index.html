@@ -18,7 +18,6 @@ small{color:#64748b}
 .comparable{border-bottom:1px solid #ddd;padding:10px 0}
 .print-only{display:none}
 @page{size:A4;margin:16mm}
-
 @media print{
 body{background:white;color:#111;font-size:10.5pt}
 header{background:white!important;color:#111!important;padding:0 0 12px;border-bottom:2px solid #17365d}
@@ -38,15 +37,12 @@ h1,h2,h3{break-after:avoid}
 }
 </style>
 </head>
-
 <body>
 <header>
 <h1>Vehicle Valuation Assistant</h1>
 <p>European Vehicle Valuation & Customs Intelligence</p>
 </header>
-
 <main>
-
 <div class="print-only" style="margin-bottom:18px">
 <h2>Voertuigwaarderingsrapport</h2>
 <p><strong>Rapportdatum:</strong> <span id="reportDate"></span></p>
@@ -61,13 +57,10 @@ h1,h2,h3{break-after:avoid}
 
 <section>
 <h2>Voertuiggegevens</h2>
-
 <label>Kenteken</label><input id="plate">
 <label>VIN / chassisnummer</label><input id="vin" maxlength="17" autocapitalize="characters">
-
 <button onclick="decodeVin()" class="no-print">VIN-gegevens ophalen</button>
 <small>Gratis VIN-decoder. Europese voertuigen worden mogelijk niet volledig herkend.</small>
-
 <button onclick="rdw()" class="no-print">RDW gegevens ophalen</button>
 
 <label>Merk</label><input id="make">
@@ -98,23 +91,19 @@ h1,h2,h3{break-after:avoid}
 <label>Verzekering tot plaats van binnenkomst EU (€)</label><input id="insurance" type="number">
 <label>Overige toepasselijke bijtellingen artikel 71 DWU (€)</label><input id="customsAdditions" type="number">
 <label>Eventuele kosten na binnenkomst EU (€)</label><input id="postImportCosts" type="number">
-
 <label>Bronnen en opmerkingen</label>
 <textarea id="notes"></textarea>
 </section>
 
 <section>
 <h2>Marktwaardering – vergelijkbare occasions</h2>
-
 <p class="no-print">Voeg vergelijkbare advertenties toe. Gebruik bij voorkeur hetzelfde model, bouwjaar en een vergelijkbare kilometerstand.</p>
-
 <div class="no-print">
 <button onclick="searchMarket('marktplaats')">Zoek op Marktplaats</button>
 <button onclick="searchMarket('autoscout')">Zoek op AutoScout24 Nederland</button>
 <button onclick="searchMarket('mobile')">Zoek op mobile.de Duitsland</button>
 <button onclick="searchMarket('autoscoutde')">Zoek op AutoScout24 Duitsland</button>
 </div>
-
 <div class="comparable-entry">
 <label>Vraagprijs (€)</label><input id="compPrice" type="number">
 <label>Bouwjaar</label><input id="compYear" type="number">
@@ -122,18 +111,14 @@ h1,h2,h3{break-after:avoid}
 <label>Bron / advertentielink</label><input id="compSource" type="url">
 <button onclick="addComparable()">Vergelijkbare auto toevoegen</button>
 </div>
-
 <div id="comparables"></div>
 <div class="result" id="valuation">Nog geen vergelijkingsgegevens ingevoerd.</div>
-
 <small>Dit is een indicatieve vergelijking van vraagprijzen, geen onafhankelijke taxatie of douanewaardebepaling.</small>
 </section>
 
 <section>
 <h2>Waarderingssamenvatting</h2>
-<div class="result" id="valuationSummary">
-Vul de waarderingsgegevens in om de samenvatting te berekenen.
-</div>
+<div class="result" id="valuationSummary">Vul de waarderingsgegevens in om de samenvatting te berekenen.</div>
 <p><small>De handelsinkoopwaarde en verkoopwaarde zijn handmatig ingevoerde waarden. De marktindicatie is gebaseerd op ingevoerde vraagprijzen. De douanewaarde wordt afzonderlijk beoordeeld volgens de toepasselijke bepalingen van het DWU.</small></p>
 </section>
 
@@ -164,7 +149,6 @@ Vul de waarderingsgegevens in om de samenvatting te berekenen.
 <p>Dit rapport bevat een indicatieve marktvergelijking op basis van ingevoerde voertuiggegevens en opgegeven advertentieprijzen. Vraagprijzen zijn geen gegarandeerde transactieprijzen. Dit rapport is geen onafhankelijke taxatie en vormt op zichzelf geen vaststelling van de douanewaarde.</p>
 <p>De douanewaarde moet afzonderlijk worden vastgesteld overeenkomstig de toepasselijke douanewetgeving. De berekening in dit rapport is uitsluitend een hulpmiddel en geen juridisch bindende vaststelling.</p>
 </div>
-
 </main>
 
 <script>
@@ -183,7 +167,6 @@ let comparables=JSON.parse(localStorage.getItem('vva_comparables')||'[]');
 
 async function decodeVin(){
 let vin=$('vin').value.toUpperCase().replace(/\s/g,'');
-
 $('vin').value=vin;
 
 if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){
@@ -193,20 +176,17 @@ return;
 
 try{
 let url='https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(vin)+'?format=json';
-
 let response=await fetch(url);
-
 if(!response.ok)throw Error('VIN-service niet bereikbaar');
 
 let data=await response.json();
 let v=data.Results&&data.Results[0];
-
 if(!v)throw Error('Geen resultaat ontvangen');
 
 let filled=[];
 
 function fillIfAvailable(id,value){
-if(value && value!=='Not Applicable' && value!=='0' && !$ (id).value.trim()){
+if(value && value!=='Not Applicable' && value!=='0' && !$(id).value.trim()){
 $(id).value=value;
 filled.push(id);
 }
@@ -231,17 +211,14 @@ if(v.ErrorText && v.ErrorText!=='0')details.push('Decoderinformatie: '+v.ErrorTe
 
 if(details.length){
 let existing=$('notes').value.trim();
-$('notes').value=(existing?existing+'\n':'')+
-'VIN-decoder: '+details.join(' | ');
+$('notes').value=(existing?existing+'\n':'')+'VIN-decoder: '+details.join(' | ');
 }
 
 if(filled.length){
-alert('VIN-decoder klaar. Ingevuld: '+filled.join(', ')+
-'. Controleer de gegevens. Niet beschikbare velden blijven ongewijzigd.');
+alert('VIN-decoder klaar. Ingevuld: '+filled.join(', ')+'. Controleer de gegevens. Niet beschikbare velden blijven ongewijzigd.');
 }else{
 alert('VIN is verwerkt, maar de decoder heeft geen nieuwe voertuiggegevens gevonden. Dit komt regelmatig voor bij Europese voertuigen.');
 }
-
 }catch(e){
 alert('VIN-decoder niet bereikbaar of geen gegevens beschikbaar. Controleer het VIN of vul de voertuiggegevens handmatig in.');
 }
@@ -249,16 +226,11 @@ alert('VIN-decoder niet bereikbaar of geen gegevens beschikbaar. Controleer het 
 
 async function rdw(){
 let p=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
-
 if(!p)return alert('Vul een kenteken in');
 
 try{
 let base='https://opendata.rdw.nl/resource/';
-let query=new URLSearchParams({
-'$where':"kenteken='"+p+"'",
-'$limit':'1'
-});
-
+let query=new URLSearchParams({'$where':"kenteken='"+p+"'"+'','$limit':'1'});
 let r=await fetch(base+'m9d7-ebf2.json?'+query);
 if(!r.ok)throw Error();
 
@@ -266,7 +238,6 @@ let a=await r.json();
 if(!a.length)throw Error();
 
 let v=a[0];
-
 $('make').value=v.merk||'';
 $('model').value=v.handelsbenaming||'';
 $('category').value=v.voertuigsoort||'';
@@ -281,22 +252,15 @@ $('catalogPrice').value=v.catalogusprijs||'';
 $('apk').value=v.vervaldatum_apk||'';
 $('first').value=v.datum_eerste_toelating||'';
 
-let fq=new URLSearchParams({
-'$where':"kenteken='"+p+"'",
-'$limit':'5'
-});
-
+let fq=new URLSearchParams({'$where':"kenteken='"+p+"'"+'','$limit':'5'});
 let fr=await fetch(base+'8ys7-d773.json?'+fq);
 
 if(fr.ok){
 let fuelRows=await fr.json();
 if(fuelRows.length){
-$('fuel').value=[...new Set(
-fuelRows.map(x=>x.brandstof_omschrijving).filter(Boolean)
-)].join(' / ');
+$('fuel').value=[...new Set(fuelRows.map(x=>x.brandstof_omschrijving).filter(Boolean))].join(' / ');
 }
 }
-
 alert('RDW-gegevens opgehaald. Controleer de ingevulde gegevens.');
 }catch(e){
 alert('RDW niet bereikbaar of kenteken niet gevonden. Vul gegevens handmatig in.');
@@ -339,7 +303,6 @@ window.location.href=urls[site];
 
 function addComparable(){
 let price=Number($('compPrice').value);
-
 if(!price)return alert('Vul een vraagprijs in.');
 
 comparables.push({
@@ -350,12 +313,10 @@ source:$('compSource').value
 });
 
 localStorage.setItem('vva_comparables',JSON.stringify(comparables));
-
 $('compPrice').value='';
 $('compYear').value='';
 $('compKm').value='';
 $('compSource').value='';
-
 renderComparables();
 }
 
@@ -371,10 +332,8 @@ Number(c.price).toLocaleString('nl-NL')+
 
 if(comparables.length){
 let prices=comparables.map(c=>Number(c.price)).filter(n=>n>0).sort((a,b)=>a-b);
-
 if(prices.length){
 let avg=prices.reduce((a,b)=>a+b,0)/prices.length;
-
 $('valuation').innerHTML=
 '<strong>Aantal vergelijkingen:</strong> '+prices.length+
 '<br><strong>Laagste vraagprijs:</strong> € '+prices[0].toLocaleString('nl-NL')+
@@ -384,7 +343,6 @@ $('valuation').innerHTML=
 }else{
 $('valuation').textContent='Nog geen vergelijkingsgegevens ingevoerd.';
 }
-
 updateValuation();
 }
 
@@ -395,11 +353,7 @@ renderComparables();
 }
 
 function updateValuation(){
-const money=n=>'€ '+Number(n).toLocaleString('nl-NL',{
-minimumFractionDigits:2,
-maximumFractionDigits:2
-});
-
+const money=n=>'€ '+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
 const entered=id=>Number($(id).value)||0;
 
 const trade=entered('trade');
@@ -410,39 +364,28 @@ const insurance=entered('insurance');
 const additions=entered('customsAdditions');
 const postImport=entered('postImportCosts');
 
-const prices=comparables.map(c=>Number(c.price))
-.filter(n=>n>0).sort((a,b)=>a-b);
+const prices=comparables.map(c=>Number(c.price)).filter(n=>n>0).sort((a,b)=>a-b);
 
 let html=
-'<strong>Handelsinkoopwaarde:</strong> '+
-(trade>0?money(trade):'Niet ingevuld')+'<br>'+
-'<strong>Verkoopwaarde:</strong> '+
-(retail>0?money(retail):'Niet ingevuld')+'<br>'+
+'<strong>Handelsinkoopwaarde:</strong> '+(trade>0?money(trade):'Niet ingevuld')+'<br>'+
+'<strong>Verkoopwaarde:</strong> '+(retail>0?money(retail):'Niet ingevuld')+'<br>'+
 '<strong>Marktindicatie op basis van '+prices.length+' advertenties:</strong> ';
 
 html+=prices.length
-?money(prices[0])+' laag – '+
-money(prices.reduce((a,b)=>a+b,0)/prices.length)+
-' gemiddeld – '+money(prices[prices.length-1])+' hoog'
+?money(prices[0])+' laag – '+money(prices.reduce((a,b)=>a+b,0)/prices.length)+' gemiddeld – '+money(prices[prices.length-1])+' hoog'
 :'Nog geen vergelijkbare advertenties';
 
 html+='<hr><strong>Indicatieve douanewaarde:</strong><br>';
 
 if(transaction>0){
 const customs=transaction+transport+insurance+additions;
-
 html+='<strong>'+money(customs)+'</strong><br>'+
-'<small>Transactieprijs '+money(transaction)+
-' + transport '+money(transport)+
-' + verzekering '+money(insurance)+
-' + overige bijtellingen '+money(additions)+'.</small>';
+'<small>Transactieprijs '+money(transaction)+' + transport '+money(transport)+' + verzekering '+money(insurance)+' + overige bijtellingen '+money(additions)+'.</small>';
 }else{
 html+='Niet berekend: vul eerst de transactieprijs in.';
 }
 
-html+='<br><small>Eventuele kosten na binnenkomst EU: '+
-money(postImport)+
-'. Deze kosten worden niet automatisch afgetrokken. Controleer eerst of en onder welke voorwaarden zij volgens de douanewetgeving buiten de douanewaarde mogen blijven.</small>';
+html+='<br><small>Eventuele kosten na binnenkomst EU: '+money(postImport)+'. Deze kosten worden niet automatisch afgetrokken. Controleer eerst of en onder welke voorwaarden zij volgens de douanewetgeving buiten de douanewaarde mogen blijven.</small>';
 
 html+='<br><br><strong>Let op:</strong> deze berekening is alleen bruikbaar als de transactiewaardemethode van toepassing is en alle bedragen correct zijn vastgesteld. Controleer onder meer de voorwaarden van artikel 70 DWU, de bijtellingen van artikel 71 DWU en de uitsluitingen van artikel 72 DWU. Voorkom dubbele telling van kosten.';
 
@@ -451,40 +394,29 @@ $('valuationSummary').innerHTML=html;
 
 function escapeHtml(s){
 return String(s).replace(/[&<>"']/g,c=>({
-'&':'&amp;',
-'<':'&lt;',
-'>':'&gt;',
-'"':'&quot;',
-"'":'&#39;'
+'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 }[c]));
 }
 
 function save(){
 let v={};
-
 fields.forEach(k=>v[k]=$(k).value);
 v.comparables=comparables;
-
 if(!v.plate&&!v.vin)return alert('Vul kenteken of VIN in');
-
 records.push(v);
-
 localStorage.setItem('vva_records',JSON.stringify(records));
-
 render();
 alert('Dossier opgeslagen');
 }
 
 function render(){
 $('records').innerHTML=records.map((v,i)=>
-'<p>'+(i+1)+'. '+escapeHtml(v.plate||'')+' – '+
-escapeHtml(v.make||'')+' '+escapeHtml(v.model||'')+'</p>'
+'<p>'+(i+1)+'. '+escapeHtml(v.plate||'')+' – '+escapeHtml(v.make||'')+' '+escapeHtml(v.model||'')+'</p>'
 ).join('');
 }
 
 function exportCSV(){
 let q=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
-
 let csv=[
 fields.map(q).join(';'),
 ...records.map(v=>fields.map(k=>q(v[k])).join(';'))
@@ -494,7 +426,6 @@ let a=document.createElement('a');
 a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
 a.download='VVA-voertuigen.csv';
 a.click();
-
 setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
@@ -510,10 +441,7 @@ renderComparables();
 [
 'trade','retail','price','transport','insurance',
 'customsAdditions','postImportCosts'
-].forEach(id=>{
-$(id).addEventListener('input',updateValuation);
-});
-
+].forEach(id=>$(id).addEventListener('input',updateValuation));
 </script>
 </body>
 </html>
