@@ -278,7 +278,7 @@ function calc(){
  let median=p.length?(p.length%2?p[(p.length-1)/2]:(p[p.length/2-1]+p[p.length/2])/2):0;
  let n=id=>Number($(id)?.value)||0;
  if($('valuationDate'))$('valuationDate').value=new Date().toLocaleDateString('nl-NL');
- $('valuation').innerHTML=
+ if($('valuation'))$('valuation').innerHTML=
   '<strong>Waarderingssamenvatting</strong><br>'+
   'Handelsinkoopwaarde: '+(n('trade')?money(n('trade')):'Niet ingevuld')+
   '<br>Verkoopwaarde: '+(n('retail')?money(n('retail')):'Niet ingevuld')+
