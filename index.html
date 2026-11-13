@@ -187,28 +187,28 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 'use strict';
 const $=id=>document.getElementById(id);
 const ids=['plate','make','model','vin','first','km','category','body','color','fuel','power','electricPower','battery','range','weight','maxMass','catalogPrice','apk','co2','emissionClass','firstNl','sourceInfo','impAudience','impOrigin','impType','impNew','impPrice','impFreight','impDutyRate','impOther','impCountry','impPurchaseDate','impOdometer','impCo2','impFuel','impFirstReg','impSeller','impVatSeller','impInland','impRdw','impAdmin','impVatRate','impCo2Method','impBpmFuel','impBpmYear','impGrossBpm','impBpmMethod','impDep','impInspection','impTradeValue','impRetailValue','trade','retail','bpm','compPrice'];
-let comps=[],records=JSON.parse(localStorage.getItem('vva_records')||'[]'),currentId=null;
+let comps=[],records=JSON.parse(localStorage.getItem('vva_records')||'[]'),currentId=null,vehicleRequest=0;
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('active',p.dataset.panel===b.dataset.tab));}));
 
 function mainSearch(){
- const plate=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
- $('plate').value=plate;
- if(plate){
-  rdw();
-  return;
- }
  const vin=$('vin').value.toUpperCase().replace(/\s/g,'');
  $('vin').value=vin;
+ // Een ingevuld VIN heeft voorrang op een oud kenteken.
  if(vin){
+  clearVehicleData();
   decodeVin();
   return;
  }
+ const plate=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+ $('plate').value=plate;
+ if(plate){rdw();return;}
  status('Vul eerst een kenteken of VIN-nummer in.');
 }
 
-function status(t){$('status').textContent=t}function set(id,v){if(v!==undefined&&v!==null&&String(v).trim()!==''&&!$(id).value)$(id).value=v}
+function status(t){$('status').textContent=t} $('vin')?.addEventListener('input',()=>{if($('vin').value.trim()){clearVehicleData();status('Nieuw VIN ingevoerd. Oude voertuiggegevens zijn gewist.');}}); function set(id,v){if(v!==undefined&&v!==null&&String(v).trim()!==''&&!$(id).value)$(id).value=v}
 function date(v){if(/^\d{8}$/.test(v||''))return v.slice(6,8)+'-'+v.slice(4,6)+'-'+v.slice(0,4);return v||''}
 async function rdw(){
+ const request=++vehicleRequest;
  let plate=$('plate').value.toUpperCase().replace(/[^A-Z0-9]/g,'');$('plate').value=plate;
  if(!plate)return alert('Vul eerst een kenteken in.');
  if(plate.length<6||plate.length>8)return alert('Controleer het kenteken. Vul het volledige Nederlandse kenteken in.');
@@ -223,11 +223,13 @@ async function rdw(){
   const response=await fetch(root+'m9d7-ebf2.json?'+query,{headers:{'Accept':'application/json'}});
   if(!response.ok)throw Error('RDW-server gaf HTTP '+response.status+'. Probeer het later opnieuw.');
   const a=await response.json();
+  if(request!==vehicleRequest)return;
   let f=[];
   try{
    const fr=await fetch(root+'8ys7-d773.json?'+fuelQuery,{headers:{'Accept':'application/json'}});
    if(fr.ok)f=await fr.json();
   }catch(_){/* Brandstofgegevens zijn aanvullend; hoofdgegevens blijven bruikbaar. */}
+  if(request!==vehicleRequest)return;
   if(!Array.isArray(a)||!a.length)throw Error('Geen voertuig gevonden voor '+plate+'. Controleer het kenteken.');
   const v=a[0];let filled=0;
   const firstNlValue=v.datum_eerste_tenaamstelling_in_nederland||v.datum_eerste_tenaamstelling_in_nederland_dt||v.datum_eerste_tenaamstelling||'';
@@ -269,11 +271,32 @@ async function rdw(){
  }
 }
 function clearVehicleData(){
+ // Ongeldig verklaar lopende RDW/VIN-antwoorden, zodat oude resultaten niet terugschrijven.
+ vehicleRequest++;
  const vehicleFields=['make','model','category','body','color','weight','maxMass','catalogPrice','apk','first','firstNl','fuel','power','electricPower','co2','emissionClass','sourceInfo'];
  vehicleFields.forEach(id=>{const el=$(id);if(el)el.value='';});
  if($('plate'))$('plate').value='';
 }
-async function decodeVin(){let v=$('vin').value.toUpperCase().trim();$('vin').value=v;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v))return alert('Vul een geldig VIN van 17 tekens in.');clearVehicleData();status('VIN-decoder wordt geraadpleegd…');try{let d=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(v)+'?format=json').then(r=>r.json()),x=d.Results[0];set('make',x.Make);set('model',x.Model);set('category',x.VehicleType);set('body',x.BodyClass);set('fuel',x.FuelTypePrimary);status('VIN-decoder klaar. Europese VIN-gegevens kunnen beperkt zijn.')}catch(e){status('VIN-decoder niet beschikbaar. Vul gegevens handmatig in.')}} 
+async function decodeVin(){
+ const request=++vehicleRequest;
+ let v=$('vin').value.toUpperCase().trim();$('vin').value=v;
+ if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v)){clearVehicleData();return alert('Vul een geldig VIN van 17 tekens in.');}
+ clearVehicleData();
+ // clearVehicleData verhoogt de teller; dit VIN-verzoek wordt de actuele aanvraag.
+ const activeRequest=vehicleRequest;
+ status('VIN-decoder wordt geraadpleegd…');
+ try{
+  let d=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(v)+'?format=json').then(r=>r.json());
+  if(activeRequest!==vehicleRequest)return;
+  let x=d.Results&&d.Results[0];
+  if(!x)throw Error('Geen gegevens gevonden voor dit VIN.');
+  set('make',x.Make);set('model',x.Model);set('category',x.VehicleType);set('body',x.BodyClass);set('fuel',x.FuelTypePrimary);
+  status('VIN-decoder klaar. Europese VIN-gegevens kunnen beperkt zijn.');
+ }catch(e){
+  if(activeRequest!==vehicleRequest)return;
+  status('VIN-decoder niet beschikbaar. Vul gegevens handmatig in.');
+ }
+}
 function money(n){return '€ '+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function addComparable(){let p=+$('compPrice').value;if(!(p>0))return alert('Vul een vraagprijs in.');comps.push(p);$('compPrice').value='';$('comparables').innerHTML=comps.map((x,i)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+i+')">Verwijderen</button></div>').join('');calc()}
 function removeComp(i){comps.splice(i,1);$('comparables').innerHTML=comps.map((x,j)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+j+')">Verwijderen</button></div>').join('');calc()}
