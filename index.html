@@ -73,7 +73,7 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
   </div>
   <div id="status" class="status" aria-live="polite">Vul bovenaan een kenteken in voor RDW-gegevens, of gebruik het VIN-nummer.</div>
 </section>
-<nav class="tabs no-print"><button class="active" data-tab="vehicle">Voertuig</button><button data-tab="value">Auto Import &amp; BPM-check</button><button data-tab="customs">Douanewaarde</button><button data-tab="dossier">Dossierbeheer</button></nav>
+<nav class="tabs no-print"><button class="active" data-tab="vehicle">Voertuig</button><button data-tab="value">Import &amp; BPM</button><button data-tab="dossier">Dossierbeheer</button></nav>
 <section class="card panel active" data-panel="vehicle"><div class="cardbody">
 <h2>Voertuiggegevens</h2><div class="grid">
 <div><label for="make">Merk</label><input id="make" readonly></div>
@@ -100,54 +100,83 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <div><label>Nieuw of gebruikt voor btw</label><select id="impNew"><option value="used">Gebruikt (meer dan 6 maanden én meer dan 6.000 km)</option><option value="new">Nieuw vervoermiddel (max. 6 maanden óf max. 6.000 km)</option><option value="unknown">Nog niet vastgesteld</option></select></div>
 <div><label>Aankoopprijs (€)</label><input id="impPrice" type="number" min="0" step="0.01" placeholder="0"></div>
 <div><label>Transport en verzekering tot EU-grens (€)</label><input id="impFreight" type="number" min="0" step="0.01" placeholder="0"></div>
-<div><label>Invoerrecht (%) – controleer TARIC</label><input id="impDutyRate" type="number" min="0" max="100" step="0.1" value="10"></div>
+<div><label>Invoerrecht (%) – TARIC-uitkomst</label><input id="impDutyRate" type="number" min="0" max="100" step="0.1" placeholder="Vul TARIC-tarief in"></div>
 <div><label>Overige kosten (€)</label><input id="impOther" type="number" min="0" step="0.01" placeholder="RDW, transport na grens, keuring etc."></div>
 </div>
-<div class="muted" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:10px"><strong>Let op bij invoerrechten</strong><br>Bij invoer van buiten de EU kunnen invoerrechten gelden. Het tarief hangt onder meer af van de goederencode, oorsprong en eventuele preferentie. De ingevulde 10% is alleen een aanpasbare rekenaanname voor een veelvoorkomende situatie met personenauto's, geen tariefbevestiging. Controleer altijd TARIC en oorsprongsbewijs.</div>
+<div class="muted" style="margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:10px"><strong>Let op bij invoerrechten</strong><br>Bij invoer van buiten de EU kunnen invoerrechten gelden. Het tarief hangt onder meer af van de goederencode, oorsprong en eventuele preferentie. Er wordt geen standaardtarief aangenomen. Vul pas een percentage in nadat u de juiste TARIC-code, oorsprong, datum en eventuele preferentie hebt gecontroleerd.</div>
+<h3>TARIC – goederencode en invoerrechten</h3>
+<div class="grid">
+<div><label>TARIC-code (10 cijfers)</label><input id="impTaricCode" inputmode="numeric" maxlength="10" placeholder="Bijv. 8703…"></div>
+<div><label>Land van oorsprong</label><input id="impTaricOrigin" placeholder="Bijv. Japan / Verenigde Staten"></div>
+<div><label>Datum tariefcontrole</label><input id="impTaricDate" type="date"></div>
+<div><label>Preferentie / bewijs van oorsprong</label><select id="impTaricPreference"><option value="unknown">Nog niet gecontroleerd</option><option value="yes">Ja – bewijs aanwezig</option><option value="no">Nee</option></select></div>
+</div>
+<div class="actions"><button class="secondary" onclick="openTaric()">Open officiële EU-TARIC raadpleging</button></div>
+<p class="muted"><small>TARIC bepaalt maatregelen op basis van goederencode, oorsprong en datum. De EU-raadpleging is leidend; de VVA haalt geen live TARIC-tarieven op en verzint geen tarief. Neem het toepasselijke recht uit de officiële raadpleging over in het veld ‘Invoerrecht’.</small></p>
 <h3>Indicatieve kostenberekening</h3>
 <div class="actions"><button class="primary" onclick="calcImport()">Bereken importkosten</button><button class="secondary" onclick="window.print()">Print / PDF</button></div>
 <div id="impResult" class="result" aria-live="polite">Vul de aankoopprijs en relevante kosten in en bereken de indicatie.</div>
-<h3>BPM-controle</h3>
-<p>De BPM-berekening hangt af van voertuigsoort, datum eerste toelating, CO₂-uitstoot en het toepasselijke historische tarief. Voor gebruikte voertuigen kan een afschrijving worden toegepast.</p>
+<h3>Voertuig- en aankoopgegevens</h3>
 <div class="grid">
-<div><label>Bruto BPM volgens toepasselijk tarief (€)</label><input id="impGrossBpm" type="number" min="0" step="0.01" placeholder="Vul berekende bruto BPM in"></div>
-<div><label>Afschrijvingsmethode</label><select id="impBpmMethod"><option value="table">Forfaitaire tabel</option><option value="list">Koerslijst</option><option value="report">Taxatierapport (alleen indien toegestaan)</option><option value="none">Nog niet bepaald</option></select></div>
-<div><label>Afschrijvingspercentage (%)</label><input id="impDep" type="number" min="0" max="100" step="0.01" placeholder="Volgens gekozen methode"></div>
-<div><label>Datum RDW-keuring / BPM-peildatum</label><input id="impInspection" type="date"></div>
+<div><label>Land van aankoop</label><input id="impCountry" placeholder="Bijv. Duitsland"></div>
+<div><label>Datum aankoop</label><input id="impPurchaseDate" type="date"></div>
+<div><label>Kilometerstand bij aankoop</label><input id="impOdometer" type="number" min="0" placeholder="km"></div>
+<div><label>CO₂-uitstoot (g/km)</label><input id="impCo2" type="number" min="0" step="1" placeholder="RDW / CoC / meetrapport"></div>
+<div><label>Brandstof / aandrijving</label><select id="impFuel"><option value="">Selecteer</option><option>Benzine</option><option>Diesel</option><option>Hybride</option><option>Plug-in hybride</option><option>Elektrisch</option><option>Waterstof</option><option>Overig</option></select></div>
+<div><label>Datum eerste toelating</label><input id="impFirstReg" type="date"></div>
+<div><label>Verkoper</label><select id="impSeller"><option>Particulier</option><option>Autobedrijf</option><option>Veiling / handelaar</option></select></div>
+<div><label>Factuur / btw-regime verkoper</label><select id="impVatSeller"><option value="margin">Marge / geen btw apart vermeld</option><option value="vat">Btw-auto / btw afzonderlijk vermeld</option><option value="private">Particuliere verkoop</option><option value="unknown">Onbekend – controleren</option></select></div>
 </div>
-<div class="actions"><button class="primary" onclick="calcBpmImport()">Bereken BPM-indicatie</button></div>
-<div id="impBpmResult" class="result" aria-live="polite">Vul bruto BPM en het onderbouwde afschrijvingspercentage in.</div>
-<div class="muted" style="padding:12px;border:1px solid var(--line);border-radius:10px"><strong>Belangrijk:</strong> de tool berekent alleen op basis van door u ingevoerde bedragen en percentages. Hij haalt geen officiële BPM-tarieven, koerslijstwaarden of actuele forfaitaire afschrijvingstabellen op. De uitkomst is geen BPM-aangifte of fiscaal advies. Bij taxatierapporten gelden strikte voorwaarden; gebruik deze methode niet automatisch.</div>
+<h3>Btw- en bijkomende kosten</h3>
+<div class="grid">
+<div><label>Transport na aankomst EU-grens (€)</label><input id="impInland" type="number" min="0" step="0.01" placeholder="0"></div>
+<div><label>RDW / keuring / registratie (€)</label><input id="impRdw" type="number" min="0" step="0.01" placeholder="0"></div>
+<div><label>Overige aankoop- en administratiekosten (€)</label><input id="impAdmin" type="number" min="0" step="0.01" placeholder="0"></div>
+<div><label>Btw-percentage voor indicatie (%)</label><input id="impVatRate" type="number" min="0" max="100" step="0.1" value="21"></div>
+</div>
+<div class="actions"><button class="primary" onclick="calcImport()">Herbereken importkosten</button></div>
+<div id="impVatNote" class="result" aria-live="polite">Btw-behandeling wordt bepaald door herkomst, nieuw/gebruikt en de factuur.</div>
+<h3>Uitgebreide BPM-onderbouwing</h3>
+<div class="grid">
+<div><label>CO₂-meetmethode</label><select id="impCo2Method"><option value="wltp">WLTP</option><option value="nedc">NEDC</option><option value="unknown">Onbekend / controleren</option></select></div>
+<div><label>Brandstof volgens BPM-tarief</label><select id="impBpmFuel"><option value="petrol">Benzine</option><option value="diesel">Diesel</option><option value="other">Overig / afwijkend</option></select></div>
+<div><label>Jaar toepasselijk BPM-tarief</label><input id="impBpmYear" type="number" min="1993" max="2035" placeholder="Tariefjaar"></div>
+<div><label>2026 personenauto-tarief</label><button type="button" class="secondary" onclick="calcBpm2026()">Bereken bruto BPM 2026</button></div>
+<div><label>Bruto BPM volgens tarief (€)</label><input id="impGrossBpm" type="number" min="0" step="0.01" placeholder="Bedrag uit toepasselijk tarief"></div>
+<div><label>Afschrijvingsmethode</label><select id="impBpmMethod"><option value="table">Forfaitaire tabel</option><option value="list">Koerslijst</option><option value="report">Taxatierapport (alleen indien toegestaan)</option><option value="none">Nog niet bepaald</option></select></div>
+<div><label>Onderbouwd afschrijvingspercentage (%)</label><input id="impDep" type="number" min="0" max="100" step="0.01" placeholder="Uit tabel / koerslijst / rapport"></div>
+<div><label>Datum RDW-keuring / BPM-peildatum</label><input id="impInspection" type="date"></div>
+<div><label>Koerslijst: handelsinkoopwaarde (€)</label><input id="impTradeValue" type="number" min="0" step="0.01"></div>
+<div><label>Koerslijst: verkoopwaarde (€)</label><input id="impRetailValue" type="number" min="0" step="0.01"></div>
+</div>
+<p class="muted"><small>De knop berekent uitsluitend het 2026-tarief voor een personenauto op basis van CO₂ en de geselecteerde dieseltoeslag. Dit is niet geschikt voor historische tarieven, bestelauto’s, motorfietsen of afwijkende voertuigcategorieën. Afschrijving moet afzonderlijk worden onderbouwd met de toegestane forfaitaire tabel, koerslijst of – indien toegestaan – taxatierapport.</small></p>
 <h3>Importchecklist</h3>
 <div id="impChecklist" class="grid">
 <label><input type="checkbox"> Aankoopfactuur / koopovereenkomst aanwezig</label>
+<label><input type="checkbox"> Betalingsbewijs en verkopersgegevens gecontroleerd</label>
+<label><input type="checkbox"> Btw-regime (marge / btw-auto / nieuw vervoermiddel) vastgesteld</label>
+<label><input type="checkbox"> CO₂-bewijs en meetmethode (WLTP/NEDC) gecontroleerd</label>
 <label><input type="checkbox"> Buitenlands kentekenbewijs compleet</label>
 <label><input type="checkbox"> VIN/chassisnummer gecontroleerd</label>
 <label><input type="checkbox"> Kilometerstand en voertuigidentiteit gecontroleerd</label>
 <label><input type="checkbox"> CoC / conformiteitsgegevens gecontroleerd</label>
 <label><input type="checkbox"> RDW-keuring en registratie gepland</label>
+<label><input type="checkbox"> BPM-tariefjaar en historische tariefgrondslag gecontroleerd</label>
+<label><input type="checkbox"> Afschrijvingsmethode en bewijsstukken vastgelegd</label>
+<label><input type="checkbox"> BPM-aangifte en betaalmoment ingepland</label>
 <label><input type="checkbox"> BPM-methode en onderbouwing gecontroleerd</label>
 <label><input type="checkbox"> Verzekering en vervoer geregeld</label>
+<label><input type="checkbox"> Exportdocumenten / uitschrijving in land van herkomst geregeld</label>
+<label><input type="checkbox"> Originele documenten en reservesleutels ontvangen</label>
 <label class="non-eu-only"><input type="checkbox"> Douaneaangifte en goederencode gecontroleerd</label>
 <label class="non-eu-only"><input type="checkbox"> Oorsprongsbewijs / preferentie gecontroleerd</label>
 <label class="non-eu-only"><input type="checkbox"> Invoerrechten en invoer-btw gecontroleerd</label>
 <label><input type="checkbox"> Nederlandse btw-positie beoordeeld (nieuw/gebruikt, particulier/ondernemer)</label>
 </div>
 <div class="actions"><button class="secondary" onclick="resetImportChecks()">Checklist leegmaken</button><button class="secondary" onclick="printImportSummary()">Importoverzicht afdrukken</button></div>
-<p class="muted"><small>EU-invoer: doorgaans geen invoeraangifte of invoerrechten tussen EU-lidstaten, maar BPM en btw-regels kunnen wel gelden. Buiten-EU-invoer: beoordeel douanewaarde, goederencode, oorsprong, invoerrechten en invoer-btw afzonderlijk. Bij een nieuw vervoermiddel binnen de EU kan Nederlandse btw verschuldigd zijn, ook bij aankoop door een particulier.</small></p>
+<p class="muted"><small>EU-invoer: doorgaans geen invoeraangifte of invoerrechten tussen EU-lidstaten, maar BPM en btw-regels kunnen wel gelden. Buiten-EU-invoer: controleer goederencode, oorsprong, invoerrechten en invoer-btw per voertuig. Bij een nieuw vervoermiddel binnen de EU kan Nederlandse btw verschuldigd zijn, ook bij aankoop door een particulier.</small></p>
 </div></section>
-<section class="card panel" data-panel="customs"><div class="cardbody">
-<h2>Douanewaarde</h2><div class="grid">
-<div><label>Transactieprijs (€)</label><input id="price" type="number" min="0" step=".01"></div>
-<div><label>Incoterm / leveringsconditie</label><input id="incoterm" placeholder="Bijv. FCA, FOB, CIF"></div>
-<div><label>Transport tot plaats van binnenkomst EU (€)</label><input id="transport" type="number" min="0" step=".01"></div>
-<div><label>Verzekering tot plaats van binnenkomst EU (€)</label><input id="insurance" type="number" min="0" step=".01"></div>
-<div><label>Overige toepasselijke bijtellingen art. 71 DWU (€)</label><input id="customsAdditions" type="number" min="0" step=".01"></div>
-<div><label>Eventuele kosten na binnenkomst EU (€)</label><input id="postImportCosts" type="number" min="0" step=".01"></div>
-</div><label>Bronnen, aannames en opmerkingen</label><textarea id="notes"></textarea>
-<div id="customsResult" class="result">Vul de transactieprijs in om de indicatieve berekening te tonen.</div>
-<p class="muted"><small>Juridische toets: artikel 70 DWU (transactiewaarde), artikel 71 DWU (bijtellingen), artikel 72 DWU (uitsluitingen) en artikel 74 DWU (subsidiaire methoden). Marktwaarde is niet automatisch douanewaarde. Voorkom dubbele telling en beoordeel elke transactie afzonderlijk.</small></p>
-</div></section>
+
 <section class="card panel no-print" data-panel="dossier"><div class="cardbody">
 <h2>Dossierbeheer</h2><div class="actions"><button class="primary" onclick="save()">Dossier opslaan</button><button class="secondary" onclick="exportCSV()">Export CSV</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div>
 <p class="muted"><small>Dossiers worden lokaal in deze browser op dit apparaat bewaard. Ze worden niet automatisch gesynchroniseerd met andere apparaten.</small></p><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
@@ -157,7 +186,7 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const ids=['plate','make','model','vin','first','km','category','body','color','fuel','power','electricPower','battery','range','weight','maxMass','catalogPrice','apk','co2','emissionClass','firstNl','sourceInfo','trade','retail','bpm','compPrice','price','incoterm','transport','insurance','customsAdditions','postImportCosts','notes'];
+const ids=['plate','make','model','vin','first','km','category','body','color','fuel','power','electricPower','battery','range','weight','maxMass','catalogPrice','apk','co2','emissionClass','firstNl','sourceInfo','impAudience','impOrigin','impType','impNew','impPrice','impFreight','impDutyRate','impOther','impCountry','impPurchaseDate','impOdometer','impCo2','impFuel','impFirstReg','impSeller','impVatSeller','impInland','impRdw','impAdmin','impVatRate','impCo2Method','impBpmFuel','impBpmYear','impGrossBpm','impBpmMethod','impDep','impInspection','impTradeValue','impRetailValue','trade','retail','bpm','compPrice'];
 let comps=[],records=JSON.parse(localStorage.getItem('vva_records')||'[]'),currentId=null;
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('active',p.dataset.panel===b.dataset.tab));}));
 
@@ -261,16 +290,8 @@ function calc(){
    '<br>Hoogste vraagprijs: '+money(p[p.length-1]):
    '<br>Voeg vergelijkbare voertuigen toe voor een marktindicatie.')+
   '<br><br><small>De gratis marktvergelijking is gebaseerd op de handmatig ingevoerde advertentievraagprijzen. Beoordeel verschillen in bouwjaar, kilometerstand, uitvoering, schade en onderhoud voordat u een waarde vaststelt.</small>';
- let total=n('price')+n('transport')+n('insurance')+n('customsAdditions');
- $('customsResult').innerHTML=n('price')?
-  'Indicatieve douanewaarde: <strong>'+money(total)+'</strong><br>Transactieprijs '+money(n('price'))+
-  ' + transport '+money(n('transport'))+' + verzekering '+money(n('insurance'))+
-  ' + overige toepasselijke bijtellingen '+money(n('customsAdditions'))+
-  '.<br><small>Na-invoerkosten '+money(n('postImportCosts'))+
-  ' zijn niet automatisch afgetrokken. Beoordeel de voorwaarden en bewijsstukken per transactie volgens het DWU.</small>':
-  'Vul de transactieprijs in om de indicatieve berekening te tonen.';
 }
-['trade','retail','bpm','price','transport','insurance','customsAdditions','postImportCosts'].forEach(id=>$(id).addEventListener('input',calc));
+['trade','retail','bpm'].forEach(id=>$(id).addEventListener('input',calc));
 if($('valuationNotes'))$('valuationNotes').addEventListener('input',()=>{});
 function data(){let x={};ids.forEach(k=>x[k]=$(k).value);x.comps=comps;x.id=currentId||('vva-'+Date.now());x.savedAt=new Date().toISOString();return x}
 function save(){if(!$('plate').value&&!$('vin').value)return alert('Vul eerst een kenteken of VIN in.');let x=data(),i=records.findIndex(r=>r.id===x.id);if(i<0)records.push(x);else records[i]=x;currentId=x.id;localStorage.setItem('vva_records',JSON.stringify(records));renderRecords();alert('Dossier lokaal opgeslagen.')}
@@ -296,8 +317,50 @@ renderRecords();calc();
 (function(){
  const byId=id=>document.getElementById(id), num=id=>Math.max(0,Number(byId(id)?.value)||0), euro=n=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(n);
  function updateOrigin(){const eu=byId('impOrigin')?.value==='eu';document.querySelectorAll('.non-eu-only').forEach(el=>el.style.display=eu?'none':'block');const duty=byId('impDutyRate');if(duty){duty.disabled=eu; if(eu)duty.value='0'; else if(Number(duty.value)===0)duty.value='10';}}
- window.calcImport=function(){const origin=byId('impOrigin').value,price=num('impPrice'),freight=num('impFreight'),other=num('impOther'),rate=num('impDutyRate');if(!price){alert('Vul eerst de aankoopprijs in.');return;}const customsValue=price+freight,duty=origin==='eu'?0:customsValue*rate/100,vatBase=customsValue+duty,vat=origin==='eu'?null:vatBase*.21,total=price+freight+duty+other+(vat||0);let msg='<strong>Indicatieve importkosten</strong><br>Aankoopprijs: '+euro(price)+'<br>Transport/verzekering: '+euro(freight)+'<br>';if(origin==='eu'){msg+='Invoerrechten: '+euro(0)+'<br>Invoer-btw: niet van toepassing als douane-invoerheffing binnen de EU. Controleer wel de btw-regels voor nieuwe vervoermiddelen en zakelijke transacties.<br>';}else{msg+='Indicatieve douanewaarde: '+euro(customsValue)+'<br>Invoerrechten ('+rate.toLocaleString('nl-NL')+'% aanname): '+euro(duty)+'<br>Indicatieve invoer-btw (21% over douanewaarde + invoerrechten): '+euro(vat)+'<br>';}msg+='Overige kosten: '+euro(other)+'<hr><strong>Indicatief totaal: '+euro(total)+'</strong><br><small>Exclusief eventuele BPM, RDW-kosten en niet ingevulde kosten. Btw-aftrek/verleggingsregeling en bijzondere douanewaardecorrecties zijn niet meegenomen.</small>';byId('impResult').innerHTML=msg;};
- window.calcBpmImport=function(){const gross=num('impGrossBpm'),dep=num('impDep'),method=byId('impBpmMethod').value;if(!gross){alert('Vul eerst de bruto BPM in.');return;}if(method==='none'||!byId('impDep').value){alert('Bepaal eerst de toegestane afschrijvingsmethode en vul het onderbouwde percentage in.');return;}if(dep>100){alert('Afschrijvingspercentage kan niet hoger zijn dan 100%.');return;}const net=gross*(1-dep/100);byId('impBpmResult').innerHTML='<strong>BPM-indicatie op basis van uw invoer</strong><br>Bruto BPM: '+euro(gross)+'<br>Afschrijving ('+dep.toLocaleString('nl-NL')+'% – '+byId('impBpmMethod').selectedOptions[0].text+'): '+euro(gross*dep/100)+'<br><strong>Indicatief resterend BPM-bedrag: '+euro(net)+'</strong><br><small>Controleer het toepasselijke historische BPM-tarief en de gekozen afschrijvingsmethode vóór aangifte.</small>';};
+ window.openTaric=function(){
+  const code=(byId('impTaricCode').value||'').replace(/\D/g,'');
+  if(code && code.length!==10){alert('Vul een TARIC-code van 10 cijfers in, of laat het veld leeg.');return;}
+  window.open('https://taxation-customs.ec.europa.eu/online-services/online-services-and-databases-customs/eu-customs-tariff-taric_en','_blank','noopener');
+ };
+ window.calcBpm2026=function(){
+  const co2=num('impCo2');
+  if(!Number.isFinite(co2)||co2<0){alert('Vul eerst de CO₂-uitstoot in g/km in.');return;}
+  const fuel=byId('impBpmFuel').value;
+  let gross=0;
+  if(co2<=77) gross=687+2*co2;
+  else if(co2<=100) gross=841+82*(co2-77);
+  else if(co2<=139) gross=2727+181*(co2-100);
+  else if(co2<=155) gross=9786+297*(co2-139);
+  else gross=14538+594*(co2-155);
+  let diesel=0;
+  if(fuel==='diesel' && co2>69) diesel=(co2-69)*114.83;
+  gross+=diesel;
+  byId('impBpmYear').value='2026';
+  byId('impGrossBpm').value=gross.toFixed(2);
+  byId('impBpmResult').innerHTML='<strong>Bruto BPM 2026 – personenauto (indicatie)</strong><br>CO₂: '+co2+' g/km<br>Basisbedrag volgens schijventarief: '+euro(gross-diesel)+'<br>Dieseltoeslag: '+euro(diesel)+'<br><strong>Bruto BPM: '+euro(gross)+'</strong><br><small>Controleer meetmethode, voertuigcategorie en officiële tarieftabel. Voor gebruikt voertuig moet daarna de toegestane afschrijving worden toegepast. Dit is geen BPM-aangifte.</small>';
+ };
+ window.calcImport=function(){
+ const origin=byId('impOrigin').value,price=num('impPrice'),freight=num('impFreight'),other=num('impOther'),rate=num('impDutyRate'),inland=num('impInland'),rdw=num('impRdw'),admin=num('impAdmin'),vatRate=num('impVatRate')/100;
+ if(!price){alert('Vul eerst de aankoopprijs in.');return;}
+ const base=price+freight,rateProvided=byId('impDutyRate').value.trim()!=='',duty=origin==='eu'?0:(rateProvided?base*rate/100:0),vatNew=byId('impNew').value==='new';
+ let vat=origin==='eu'?0:(base+duty+inland+other)*vatRate,vatText='';
+ if(origin==='eu'){
+  if(vatNew){vat=price*vatRate;vatText='Nieuw vervoermiddel: Nederlandse btw kan verschuldigd zijn, ook bij particuliere aankoop. Controleer de 6-maanden/6.000-km-regel.';}
+  else {vatText='EU-aankoop: doorgaans geen invoer-btw. De btw-behandeling op de factuur hangt af van verkoper, marge-/btw-regime en zakelijke status.';}
+ } else {vatText='Invoer van buiten de EU: indicatieve btw over een vereenvoudigde grondslag. Controleer de wettelijke btw-grondslag en eventuele bijzondere regelingen.';}
+ const total=price+freight+duty+vat+other+inland+rdw+admin;
+ let msg='<strong>Importkosten – indicatie</strong><br>Aankoopprijs: '+euro(price)+'<br>Transport/verzekering tot EU-grens: '+euro(freight)+'<br>Indicatieve invoerrechten: '+euro(duty)+'<br>Indicatieve btw: '+euro(vat)+'<br>Transport na EU-grens: '+euro(inland)+'<br>RDW/keuring: '+euro(rdw)+'<br>Overige kosten: '+euro(other+admin)+'<hr><strong>Indicatief totaal vóór BPM: '+euro(total)+'</strong>';
+ byId('impResult').innerHTML=msg+'<br><small>Geen officiële aangifteberekening. Invoerrechtstarief, oorsprong, preferentie, btw-grondslag, vrijstellingen en bijzondere situaties moeten per voertuig worden gecontroleerd.</small>';
+ byId('impVatNote').innerHTML='<strong>Btw-aandachtspunt</strong><br>'+vatText+'<br>Verkoper/factuur: '+byId('impSeller').value+' – '+byId('impVatSeller').selectedOptions[0].text;
+ };
+ window.calcBpmImport=function(){
+ const gross=num('impGrossBpm'),dep=num('impDep'),method=byId('impBpmMethod').value,co2=num('impCo2'),year=byId('impBpmYear').value;
+ if(!gross){alert('Vul het bruto BPM-bedrag in op basis van het toepasselijke tarief.');return;}
+ if(method==='none'||!byId('impDep').value){alert('Bepaal eerst de toegestane afschrijvingsmethode en vul het onderbouwde percentage in.');return;}
+ if(dep>100){alert('Afschrijvingspercentage kan niet hoger zijn dan 100%.');return;}
+ const net=gross*(1-dep/100);
+ byId('impBpmResult').innerHTML='<strong>BPM-indicatie op basis van uw invoer</strong><br>CO₂: '+(co2?co2+' g/km':'niet ingevuld')+' ('+byId('impCo2Method').selectedOptions[0].text+')<br>Brandstof: '+byId('impBpmFuel').selectedOptions[0].text+'<br>Tariefjaar: '+(year||'niet ingevuld')+'<br>Bruto BPM: '+euro(gross)+'<br>Afschrijving ('+dep.toLocaleString('nl-NL')+'% – '+byId('impBpmMethod').selectedOptions[0].text+'): '+euro(gross*dep/100)+'<br><strong>Indicatief resterend BPM-bedrag: '+euro(net)+'</strong><br><small>Controleer het historische tarief en de afschrijving met officiële bronnen en bewaar de onderbouwing bij het dossier.</small>';
+ };
  window.resetImportChecks=function(){document.querySelectorAll('#impChecklist input[type=checkbox]').forEach(c=>c.checked=false);};
  window.printImportSummary=function(){window.print();};
  byId('impOrigin')?.addEventListener('change',updateOrigin);updateOrigin();
