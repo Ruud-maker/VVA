@@ -59,6 +59,22 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 @media print{
  .poster-section{display:none!important}
 }
+
+/* Uitgebreide VIN-controle */
+.vin-report-card{margin:18px 0;border:1px solid var(--line,#d9e0e7);border-radius:16px;background:linear-gradient(135deg,rgba(245,190,55,.13),rgba(255,255,255,.96));overflow:hidden}
+.vin-report-inner{padding:20px}
+.vin-report-kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#936500;margin-bottom:7px}
+.vin-report-card h3{margin:0 0 8px;font-size:19px}
+.vin-report-card p{margin:0 0 14px;color:var(--muted,#596579);line-height:1.5}
+.vin-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0 17px}
+.vin-report-item{background:rgba(255,255,255,.82);border:1px solid rgba(120,130,145,.18);border-radius:10px;padding:10px;font-size:13px}
+.vin-report-item strong{display:block;margin-bottom:3px;color:var(--ink,#18212f)}
+.vin-report-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.vin-report-note{font-size:11px!important;margin:12px 0 0!important}
+.vin-report-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 17px;border-radius:10px;background:#172b45;color:#fff!important;text-decoration:none!important;font-weight:800}
+.vin-report-link:hover{filter:brightness(1.12)}
+@media(max-width:560px){.vin-report-grid{grid-template-columns:1fr 1fr}.vin-report-inner{padding:16px}}
+
 </style></head>
 <body>
 
@@ -90,6 +106,25 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <div><label>CO₂-uitstoot (g/km)</label><input id="co2"></div><div><label>Emissieklasse</label><input id="emissionClass"></div>
 <div><label>Datum eerste tenaamstelling NL</label><input id="firstNl"></div><div><label>RDW-bron / ophaalstatus</label><input id="sourceInfo" readonly></div>
 </div><div class="actions no-print"><button class="primary" onclick="rdw()">RDW-gegevens ophalen</button><button class="secondary" onclick="decodeVin()">VIN-gegevens ophalen</button></div><small>Vul bovenaan uw kenteken in voor RDW-gegevens of gebruik het VIN-nummer eronder.</small></div></section>
+
+<section class="vin-report-card" aria-labelledby="vinReportTitle">
+  <div class="vin-report-inner">
+    <div class="vin-report-kicker">Extra voertuigonderzoek</div>
+    <h3 id="vinReportTitle">Uitgebreide VIN- &amp; voertuiggeschiedenis</h3>
+    <p>Wil je meer weten dan de gratis basisgegevens? Bekijk een extern voertuigrapport op basis van het chassisnummer.</p>
+    <div class="vin-report-grid">
+      <div class="vin-report-item"><strong>Kilometerhistorie</strong>Beschikbare registraties en mogelijke afwijkingen</div>
+      <div class="vin-report-item"><strong>Schadehistorie</strong>Eventuele schade- en veilingregistraties</div>
+      <div class="vin-report-item"><strong>Importverleden</strong>Beschikbare landen- en registratiehistorie</div>
+      <div class="vin-report-item"><strong>Voertuigdetails</strong>Technische gegevens en uitvoering, indien beschikbaar</div>
+    </div>
+    <div class="vin-report-actions">
+      <a class="vin-report-link" href="https://www.mrvin.com/nl/" target="_blank" rel="noopener noreferrer">Bekijk VIN-rapporten bij MrVIN <span aria-hidden="true">↗</span></a>
+    </div>
+    <p class="vin-report-note">Je verlaat VVA Check. Vul je VIN in op de website van de aanbieder. Rapporten kunnen betaald zijn; inhoud en beschikbaarheid verschillen per voertuig en land. VVA Check ontvangt of controleert deze externe rapportgegevens niet automatisch.</p>
+  </div>
+</section>
+
 <section class="card panel" data-panel="value"><div class="cardbody">
 <h2>Auto Import &amp; BPM-check</h2>
 <p class="muted">Praktische importhulp voor particulieren en autobedrijven. Kies de route die bij uw situatie past en bouw stap voor stap een importdossier op.</p>
