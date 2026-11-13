@@ -149,20 +149,55 @@ async function rdw(){
  if(plate.length<6||plate.length>8)return alert('Controleer het kenteken. Vul het volledige Nederlandse kenteken in.');
  status('RDW-gegevens worden opgehaald…');
  const root='https://opendata.rdw.nl/resource/';
- const query=new URLSearchParams({'$where':"kenteken='"+plate+"'",'$limit':'1'}).toString();
- const fuelQuery=new URLSearchParams({'$where':"kenteken='"+plate+"'",'$limit':'5'}).toString();
+ const query=new URLSearchParams({'kenteken':plate,'$limit':'1'}).toString();
+ const fuelQuery=new URLSearchParams({'kenteken':plate,'$limit':'5'}).toString();
  try{
- const response=await fetch(root+'m9d7-ebf2.json?'+query,{headers:{'Accept':'application/json'}});
- if(!response.ok)throw Error('RDW-server gaf HTTP '+response.status+'. Probeer het later opnieuw.');
- const a=await response.json();
- let f=[];
- try{const fr=await fetch(root+'8ys7-d773.json?'+fuelQuery,{headers:{'Accept':'application/json'}});if(fr.ok)f=await fr.json();}catch(_){/* brandstofdetails zijn aanvullend */}
- if(!Array.isArray(a)||!a.length)throw Error('Geen voertuig gevonden voor '+plate+'. Controleer het kenteken.');let v=a[0],filled=0;
- const map={make:v.merk,model:v.handelsbenaming,category:v.voertuigsoort,body:v.inrichting,color:[v.eerste_kleur,v.tweede_kleur].filter(Boolean).join(' / '),weight:v.massa_ledig_voertuig,maxMass:v.toegestane_maximum_massa,catalogPrice:v.catalogusprijs,apk:date(v.vervaldatum_apk),first:date(v.datum_eerste_toelating),firstNl:date(v.datum_eerste_tenaamstelling)};
- for(let [k,x] of Object.entries(map)){let before=$(k).value;set(k,x);if(!before&&$(k).value)filled++}
- if(f.length){set('fuel',[...new Set(f.map(x=>x.brandstof_omschrijving).filter(Boolean))].join(' / '));set('power',f[0].nettomaximumvermogen);set('co2',f[0]['co2 uitstoot gecombineerd']);set('emissionClass',f[0].emissiecode_omschrijving)}
- $('sourceInfo').value='RDW Open Data – '+new Date().toLocaleString('nl-NL');status('RDW klaar. '+filled+' lege velden aangevuld. Controleer alle waarden.');calc();
- }catch(e){const msg=e&&e.message?e.message:'Onbekende fout';status('RDW-opvraag mislukt: '+msg);alert('RDW-opvraag mislukt: '+msg)}
+  const response=await fetch(root+'m9d7-ebf2.json?'+query,{headers:{'Accept':'application/json'}});
+  if(!response.ok)throw Error('RDW-server gaf HTTP '+response.status+'. Probeer het later opnieuw.');
+  const a=await response.json();
+  let f=[];
+  try{
+   const fr=await fetch(root+'8ys7-d773.json?'+fuelQuery,{headers:{'Accept':'application/json'}});
+   if(fr.ok)f=await fr.json();
+  }catch(_){/* Brandstofgegevens zijn aanvullend; hoofdgegevens blijven bruikbaar. */}
+  if(!Array.isArray(a)||!a.length)throw Error('Geen voertuig gevonden voor '+plate+'. Controleer het kenteken.');
+  const v=a[0];let filled=0;
+  const firstNlValue=v.datum_eerste_tenaamstelling_in_nederland||v.datum_eerste_tenaamstelling_in_nederland_dt||v.datum_eerste_tenaamstelling||'';
+  const map={
+   make:v.merk,model:v.handelsbenaming,category:v.voertuigsoort,body:v.inrichting,
+   color:[v.eerste_kleur,v.tweede_kleur].filter(Boolean).join(' / '),
+   weight:v.massa_ledig_voertuig,
+   maxMass:v.toegestane_maximum_massa_voertuig||v.toegestane_maximum_massa,
+   catalogPrice:v.catalogusprijs,apk:date(v.vervaldatum_apk),
+   first:date(v.datum_eerste_toelating),firstNl:date(firstNlValue)
+  };
+  for(const [k,x] of Object.entries(map)){
+   const el=$(k);if(!el)continue;
+   const before=el.value;set(k,x);if(!before&&el.value)filled++;
+  }
+  if(Array.isArray(f)&&f.length){
+   const fuels=[...new Set(f.map(x=>x.brandstof_omschrijving).filter(Boolean))];
+   const enginePower=f.map(x=>x.nettomaximumvermogen).find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+   const electricPower=f.map(x=>x.netto_max_vermogen_elektrisch).find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+   const co2=f.map(x=>x.co2_uitstoot_gecombineerd||x.emissie_co2_gecombineerd_wltp||x['co2 uitstoot gecombineerd']).find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+   const emission=f.map(x=>x.emissiecode_omschrijving).find(x=>x);
+   if(fuels.length)set('fuel',fuels.join(' / '));
+   if(enginePower)set('power',enginePower);
+   if(electricPower)set('electricPower',electricPower);
+   if(co2)set('co2',co2);
+   if(emission)set('emissionClass',emission);
+  }
+  const missing=[];
+  if(!$('power').value&&!$('electricPower').value)missing.push('vermogen');
+  if(!$('firstNl').value)missing.push('datum eerste tenaamstelling NL');
+  $('sourceInfo').value='RDW Open Data – '+new Date().toLocaleString('nl-NL');
+  status('RDW klaar. '+filled+' voertuigvelden aangevuld.'+(missing.length?' Niet beschikbaar in RDW-resultaat: '+missing.join(', ')+'.':' Controleer alle waarden.'));
+  calc();
+ }catch(e){
+  const msg=e&&e.message?e.message:'Onbekende fout';
+  status('RDW-opvraag mislukt: '+msg);
+  alert('RDW-opvraag mislukt: '+msg);
+ }
 }
 async function decodeVin(){let v=$('vin').value.toUpperCase().trim();$('vin').value=v;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v))return alert('Vul een geldig VIN van 17 tekens in.');status('VIN-decoder wordt geraadpleegd…');try{let d=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(v)+'?format=json').then(r=>r.json()),x=d.Results[0];set('make',x.Make);set('model',x.Model);set('category',x.VehicleType);set('body',x.BodyClass);set('fuel',x.FuelTypePrimary);status('VIN-decoder klaar. Europese VIN-gegevens kunnen beperkt zijn.')}catch(e){status('VIN-decoder niet beschikbaar. Vul gegevens handmatig in.')}} 
 function money(n){return '€ '+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
