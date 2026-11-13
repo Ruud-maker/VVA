@@ -96,9 +96,17 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <div><label>Verkoopwaarde (€)</label><input id="retail" type="number" min="0"></div>
 <div><label>Rest-BPM (€)</label><input id="bpm" type="number" min="0"></div>
 <div><label>Vergelijkbare vraagprijs (€)</label><input id="compPrice" type="number" min="0"></div>
-</div><div class="actions"><button class="primary" onclick="addComparable()">Vergelijkbare auto toevoegen</button><button class="secondary" onclick="market()">Zoek occasions</button></div>
+</div><div class="actions"><button class="primary" onclick="addComparable()">Vergelijkbare vraagprijs toevoegen</button><button class="secondary" onclick="market()">Zoek actuele advertenties</button></div>
+<div class="muted" style="margin:10px 0;padding:12px;border:1px solid var(--line);border-radius:10px">
+<strong>Gratis marktonderzoek</strong><br>
+Zoek advertenties op basis van het RDW-merk en model. Vergelijk bij voorkeur hetzelfde bouwjaar, dezelfde uitvoering, brandstof en een vergelijkbare kilometerstand. Neem de vraagprijzen handmatig over; advertenties zijn geen gerealiseerde verkoopprijzen.
+</div>
 <div id="comparables"></div><div id="valuation" class="result">Nog geen waarderingsgegevens.</div>
-<p class="muted"><small>Marktprijzen zijn indicatieve vraagprijzen en geen gerealiseerde transactieprijzen of onafhankelijke taxatie.</small></p>
+<div class="grid">
+<div><label>Waarderingsdatum</label><input id="valuationDate" readonly></div>
+<div><label>Onderbouwing / staat voertuig</label><input id="valuationNotes" placeholder="Bijv. schadevrij, onderhoudshistorie, opties"></div>
+</div>
+<p class="muted"><small>De vergelijking toont aantal referenties, laagste, mediaan, gemiddelde en hoogste vraagprijs. Gebruik bij voorkeur vergelijkbare voertuigen met overeenkomstig bouwjaar, kilometerstand, uitvoering en conditie. Vraagprijzen zijn geen gerealiseerde verkoopprijzen of onafhankelijke taxatie.</small></p>
 </div></section>
 <section class="card panel" data-panel="customs"><div class="cardbody">
 <h2>Douanewaarde</h2><div class="grid">
@@ -207,8 +215,35 @@ async function decodeVin(){let v=$('vin').value.toUpperCase().trim();$('vin').va
 function money(n){return '€ '+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function addComparable(){let p=+$('compPrice').value;if(!(p>0))return alert('Vul een vraagprijs in.');comps.push(p);$('compPrice').value='';$('comparables').innerHTML=comps.map((x,i)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+i+')">Verwijderen</button></div>').join('');calc()}
 function removeComp(i){comps.splice(i,1);$('comparables').innerHTML=comps.map((x,j)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+j+')">Verwijderen</button></div>').join('');calc()}
-function calc(){let p=comps.slice().sort((a,b)=>a-b),avg=p.length?p.reduce((a,b)=>a+b,0)/p.length:0;$('valuation').innerHTML='Handelsinkoopwaarde: '+(+$('trade').value?money($('trade').value):'Niet ingevuld')+'<br>Verkoopwaarde: '+(+$('retail').value?money($('retail').value):'Niet ingevuld')+'<br>Rest-BPM: '+(+$('bpm').value?money($('bpm').value):'Niet ingevuld')+'<br>Vergelijkingen: '+p.length+(p.length?'<br>Laagste: '+money(p[0])+' · Gemiddeld: '+money(avg)+' · Hoogste: '+money(p[p.length-1]):'');let n=id=>+$ (id).value||0;let total=n('price')+n('transport')+n('insurance')+n('customsAdditions');$('customsResult').innerHTML=n('price')?'Indicatieve douanewaarde: <strong>'+money(total)+'</strong><br>Transactieprijs '+money(n('price'))+' + transport '+money(n('transport'))+' + verzekering '+money(n('insurance'))+' + overige bijtellingen '+money(n('customsAdditions'))+'.<br><small>Na-invoerkosten '+money(n('postImportCosts'))+' zijn niet automatisch afgetrokken; toets eerst de wettelijke voorwaarden.</small>':'Vul de transactieprijs in om de indicatieve berekening te tonen.'}
+function calc(){
+ let p=comps.slice().map(Number).filter(x=>Number.isFinite(x)&&x>0).sort((a,b)=>a-b);
+ let avg=p.length?p.reduce((a,b)=>a+b,0)/p.length:0;
+ let median=p.length?(p.length%2?p[(p.length-1)/2]:(p[p.length/2-1]+p[p.length/2])/2):0;
+ let n=id=>Number($(id)?.value)||0;
+ if($('valuationDate'))$('valuationDate').value=new Date().toLocaleDateString('nl-NL');
+ $('valuation').innerHTML=
+  '<strong>Waarderingssamenvatting</strong><br>'+
+  'Handelsinkoopwaarde: '+(n('trade')?money(n('trade')):'Niet ingevuld')+
+  '<br>Verkoopwaarde: '+(n('retail')?money(n('retail')):'Niet ingevuld')+
+  '<br>Rest-BPM: '+(n('bpm')?money(n('bpm')):'Niet ingevuld')+
+  '<br><br><strong>Marktvergelijking ('+p.length+' referenties)</strong>'+
+  (p.length?'<br>Laagste vraagprijs: '+money(p[0])+
+   '<br>Mediaan: '+money(median)+
+   '<br>Gemiddelde: '+money(avg)+
+   '<br>Hoogste vraagprijs: '+money(p[p.length-1]):
+   '<br>Voeg vergelijkbare voertuigen toe voor een marktindicatie.')+
+  '<br><br><small>De gratis marktvergelijking is gebaseerd op de handmatig ingevoerde advertentievraagprijzen. Beoordeel verschillen in bouwjaar, kilometerstand, uitvoering, schade en onderhoud voordat u een waarde vaststelt.</small>';
+ let total=n('price')+n('transport')+n('insurance')+n('customsAdditions');
+ $('customsResult').innerHTML=n('price')?
+  'Indicatieve douanewaarde: <strong>'+money(total)+'</strong><br>Transactieprijs '+money(n('price'))+
+  ' + transport '+money(n('transport'))+' + verzekering '+money(n('insurance'))+
+  ' + overige toepasselijke bijtellingen '+money(n('customsAdditions'))+
+  '.<br><small>Na-invoerkosten '+money(n('postImportCosts'))+
+  ' zijn niet automatisch afgetrokken. Beoordeel de voorwaarden en bewijsstukken per transactie volgens het DWU.</small>':
+  'Vul de transactieprijs in om de indicatieve berekening te tonen.';
+}
 ['trade','retail','bpm','price','transport','insurance','customsAdditions','postImportCosts'].forEach(id=>$(id).addEventListener('input',calc));
+if($('valuationNotes'))$('valuationNotes').addEventListener('input',()=>{});
 function data(){let x={};ids.forEach(k=>x[k]=$(k).value);x.comps=comps;x.id=currentId||('vva-'+Date.now());x.savedAt=new Date().toISOString();return x}
 function save(){if(!$('plate').value&&!$('vin').value)return alert('Vul eerst een kenteken of VIN in.');let x=data(),i=records.findIndex(r=>r.id===x.id);if(i<0)records.push(x);else records[i]=x;currentId=x.id;localStorage.setItem('vva_records',JSON.stringify(records));renderRecords();alert('Dossier lokaal opgeslagen.')}
 function renderRecords(){$('records').innerHTML=records.length?records.map((r,i)=>'<div class="entry"><b>'+esc(r.plate||r.vin)+' – '+esc((r.make||'')+' '+(r.model||''))+'</b><br><button class="secondary" onclick="loadRecord('+i+')">Openen</button> <button class="secondary" onclick="delRecord('+i+')">Verwijderen</button></div>').join(''):'Nog geen dossiers opgeslagen.'}
@@ -217,7 +252,16 @@ function loadRecord(i){let r=records[i];ids.forEach(k=>$(k).value=r[k]||'');comp
 function delRecord(i){if(confirm('Dossier verwijderen?')){records.splice(i,1);localStorage.setItem('vva_records',JSON.stringify(records));renderRecords()}}
 function newRecord(){if(!confirm('Nieuw leeg dossier starten?'))return;ids.forEach(k=>$(k).value='');comps=[];currentId=null;$('comparables').innerHTML='';calc();status('Nieuw dossier.')}
 function exportCSV(){let rows=[ids,...records.map(r=>ids.map(k=>r[k]||''))],csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(';')).join('\r\n'),a=document.createElement('a'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='VVA-dossiers.csv';a.click();URL.revokeObjectURL(u)}
-function market(){let q=encodeURIComponent(($('make').value+' '+$('model').value).trim());if(!q)return alert('Vul merk en model in.');window.open('https://www.google.com/search?q='+q+'+occasion+te+koop','_blank','noopener')}
+function market(){
+ let make=$('make')?.value||'',model=$('model')?.value||'';
+ if(!make&&!model)return alert('Vul eerst een kenteken in en haal de RDW-gegevens op.');
+ let first=$('first')?.value||'',km=$('km')?.value||'';
+ let year=(first.match(/(?:19|20)\\d{2}/)||[])[0]||'';
+ let q=[make,model,year,'occasion te koop'].filter(Boolean).join(' ');
+ let url='https://www.google.com/search?q='+encodeURIComponent(q+' (site:marktplaats.nl OR site:autoscout24.nl OR site:gaspedaal.nl)');
+ window.open(url,'_blank','noopener');
+ status('Gratis marktonderzoek geopend. Vergelijk advertenties en voer de relevante vraagprijzen handmatig in.');
+}
 renderRecords();calc();
 
 </script></body></html>
