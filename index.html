@@ -268,7 +268,12 @@ async function rdw(){
   alert('RDW-opvraag mislukt: '+msg);
  }
 }
-async function decodeVin(){let v=$('vin').value.toUpperCase().trim();$('vin').value=v;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v))return alert('Vul een geldig VIN van 17 tekens in.');status('VIN-decoder wordt geraadpleegd…');try{let d=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(v)+'?format=json').then(r=>r.json()),x=d.Results[0];set('make',x.Make);set('model',x.Model);set('category',x.VehicleType);set('body',x.BodyClass);set('fuel',x.FuelTypePrimary);status('VIN-decoder klaar. Europese VIN-gegevens kunnen beperkt zijn.')}catch(e){status('VIN-decoder niet beschikbaar. Vul gegevens handmatig in.')}} 
+function clearVehicleData(){
+ const vehicleFields=['make','model','category','body','color','weight','maxMass','catalogPrice','apk','first','firstNl','fuel','power','electricPower','co2','emissionClass','sourceInfo'];
+ vehicleFields.forEach(id=>{const el=$(id);if(el)el.value='';});
+ if($('plate'))$('plate').value='';
+}
+async function decodeVin(){let v=$('vin').value.toUpperCase().trim();$('vin').value=v;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v))return alert('Vul een geldig VIN van 17 tekens in.');clearVehicleData();status('VIN-decoder wordt geraadpleegd…');try{let d=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(v)+'?format=json').then(r=>r.json()),x=d.Results[0];set('make',x.Make);set('model',x.Model);set('category',x.VehicleType);set('body',x.BodyClass);set('fuel',x.FuelTypePrimary);status('VIN-decoder klaar. Europese VIN-gegevens kunnen beperkt zijn.')}catch(e){status('VIN-decoder niet beschikbaar. Vul gegevens handmatig in.')}} 
 function money(n){return '€ '+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function addComparable(){let p=+$('compPrice').value;if(!(p>0))return alert('Vul een vraagprijs in.');comps.push(p);$('compPrice').value='';$('comparables').innerHTML=comps.map((x,i)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+i+')">Verwijderen</button></div>').join('');calc()}
 function removeComp(i){comps.splice(i,1);$('comparables').innerHTML=comps.map((x,j)=>'<div class="entry">'+money(x)+' <button class="secondary" onclick="removeComp('+j+')">Verwijderen</button></div>').join('');calc()}
