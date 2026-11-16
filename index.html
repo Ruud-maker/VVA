@@ -139,7 +139,7 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <div><label>Catalogusprijs (€)</label><input id="catalogPrice"></div><div><label>Vervaldatum APK</label><input id="apk"></div>
 <div><label>CO₂-uitstoot (g/km)</label><input id="co2"></div><div><label>Emissieklasse</label><input id="emissionClass"></div>
 <div><label>Datum eerste tenaamstelling NL</label><input id="firstNl"></div><div><label>RDW-bron / ophaalstatus</label><input id="sourceInfo" readonly></div>
-</div><div class="actions no-print"><button class="secondary" onclick="decodeVin()">VIN-gegevens ophalen</button></div></div></section>
+</div></div>
 
 <section class="vin-report-card" aria-labelledby="vinReportTitle">
   <div class="vin-report-inner">
@@ -157,6 +157,7 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
     </div>
     <p class="vin-report-note">Je verlaat VVA Check. Vul je VIN in op de website van de aanbieder. Rapporten kunnen betaald zijn; inhoud en beschikbaarheid verschillen per voertuig en land. VVA Check ontvangt of controleert deze externe rapportgegevens niet automatisch.</p>
   </div>
+</section>
 </section>
 
 <section class="card panel" data-panel="value"><div class="cardbody">
@@ -181,8 +182,10 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <div><label>Preferentie / bewijs van oorsprong</label><select id="impTaricPreference"><option value="unknown">Nog niet gecontroleerd</option><option value="yes">Ja – bewijs aanwezig</option><option value="no">Nee</option></select></div>
 </div>
 <div class="grid">
+<div><label>Officiële goederenomschrijving (uit Gebruikstarief)</label><input id="impTaricDescription" placeholder="Plak of vul de officiële omschrijving in"></div>
 <div><label>Nederlandse aanvullende code (NAC), indien van toepassing</label><input id="impTaricNac" inputmode="numeric" placeholder="Alleen invullen indien vereist"></div>
-<div><label>Antidumping / aanvullende heffing</label><input id="impTaricTradeMeasure" placeholder="Geen / percentage / bedrag / controleren"></div>
+<div><label>Antidumping / aanvullende heffing – omschrijving</label><input id="impTaricTradeMeasure" placeholder="Geen / maatregel / controleren"></div>
+<div><label>Aanvullende heffing (%) indien van toepassing</label><input id="impTaricExtraRate" type="number" min="0" max="1000" step="0.01" placeholder="0"></div>
 <div><label>Vergunningen, certificaten of beperkingen</label><input id="impTaricRestrictions" placeholder="Geen / vereist / nader controleren"></div>
 <div><label>Douane-opmerkingen / bronverwijzing</label><input id="impTaricNotes" placeholder="Bijv. maatregel, documentcode of raadpleegnotitie"></div>
 </div>
@@ -190,7 +193,13 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <button class="secondary" type="button" onclick="openDutchUsegstarief()">Open Nederlands Gebruikstarief</button>
 <button class="secondary" type="button" onclick="openEUTaric()">Open EU-TARIC</button>
 </div>
-<p class="muted"><small>De VVA opent de officiële raadplegingen. De gebruiker controleert de juiste voertuigindeling, oorsprong, datum en eventuele aanvullende maatregelen en neemt het vastgestelde invoerrecht over in het veld hierboven. De VVA haalt geen live tariefgegevens op en berekent geen juridisch bindende tariefindeling.</small></p>
+<div style="margin-top:12px">
+<label for="impTaricPaste"><strong>Tariefgegevens overnemen</strong></label>
+<p class="muted"><small>Kopieer de relevante tekst uit het officiële Gebruikstarief en plak die hieronder. VVA herkent waar mogelijk de TARIC-code, omschrijving, percentage en NAC. Controleer alle herkende waarden voordat u opslaat of rekent.</small></p>
+<textarea id="impTaricPaste" rows="5" placeholder="Plak hier de gekopieerde tariefinformatie uit tarief.douane.nl"></textarea>
+<div class="actions"><button class="primary" type="button" onclick="importTaricPastedText()">Gegevens overnemen</button><button class="secondary" type="button" onclick="clearTaricPaste()">Tekst wissen</button></div>
+</div>
+<p class="muted"><small>Dit is begeleide overname uit gekopieerde officiële tariefinformatie, geen automatische live-API-koppeling. Controleer voertuigindeling, oorsprong, datum, preferentie en maatregelen in de officiële bron. De VVA geeft geen juridisch bindende tariefindeling.</small></p>
 <h3>Indicatieve kostenberekening</h3>
 <div class="actions"><button class="primary" onclick="calcImport()">Bereken importkosten</button><button class="secondary" onclick="window.print()">Print / PDF</button></div>
 <div id="impResult" class="result" aria-live="polite">Vul de aankoopprijs en relevante kosten in en bereken de indicatie.</div>
@@ -264,7 +273,7 @@ main{max-width:1120px;margin:0 auto;padding:0 12px 20px}
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const ids=['plate','make','model','vin','first','km','category','body','color','fuel','power','electricPower','battery','range','weight','maxMass','catalogPrice','apk','co2','emissionClass','firstNl','sourceInfo','impAudience','impOrigin','impType','impNew','impPrice','impFreight','impDutyRate','impOther','impTaricCode','impTaricOrigin','impTaricDate','impTaricPreference','impTaricNac','impTaricTradeMeasure','impTaricRestrictions','impTaricNotes','impCountry','impPurchaseDate','impOdometer','impCo2','impFuel','impFirstReg','impSeller','impVatSeller','impInland','impRdw','impAdmin','impVatRate','impCo2Method','impBpmFuel','impBpmYear','impGrossBpm','impBpmMethod','impDep','impInspection','impTradeValue','impRetailValue','trade','retail','bpm','compPrice'];
+const ids=['plate','make','model','vin','first','km','category','body','color','fuel','power','electricPower','battery','range','weight','maxMass','catalogPrice','apk','co2','emissionClass','firstNl','sourceInfo','impAudience','impOrigin','impType','impNew','impPrice','impFreight','impDutyRate','impOther','impTaricCode','impTaricOrigin','impTaricDate','impTaricPreference','impTaricDescription','impTaricNac','impTaricTradeMeasure','impTaricExtraRate','impTaricRestrictions','impTaricNotes','impCountry','impPurchaseDate','impOdometer','impCo2','impFuel','impFirstReg','impSeller','impVatSeller','impInland','impRdw','impAdmin','impVatRate','impCo2Method','impBpmFuel','impBpmYear','impGrossBpm','impBpmMethod','impDep','impInspection','impTradeValue','impRetailValue','trade','retail','bpm','compPrice'];
 let comps=[],records=JSON.parse(localStorage.getItem('vva_records')||'[]'),currentId=null,vehicleRequest=0;
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('active',p.dataset.panel===b.dataset.tab));}));
 
@@ -402,6 +411,20 @@ function calc(){
 if($('valuationNotes'))$('valuationNotes').addEventListener('input',()=>{});
 function openDutchUsegstarief(){window.open('https://tarief.douane.nl/','_blank','noopener');}
 function openEUTaric(){window.open('https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl','_blank','noopener');}
+function clearTaricPaste(){const el=$('impTaricPaste');if(el)el.value='';}
+function importTaricPastedText(){
+ const raw=$('impTaricPaste')?.value||''; if(!raw.trim())return alert('Plak eerst de gekopieerde tariefinformatie uit het Gebruikstarief.');
+ const text=raw.replace(/\r/g,' ').replace(/[\t\u00a0]+/g,' ').replace(/ {2,}/g,' ');
+ const codeMatch=text.match(/\b(\d{10})\b/); if(codeMatch)$('impTaricCode').value=codeMatch[1];
+ const pctMatches=[...text.matchAll(/(\d{1,3}(?:[.,]\d{1,4})?)\s*%/g)].map(m=>Number(m[1].replace(',','.'))).filter(n=>Number.isFinite(n)&&n<=1000);
+ if(pctMatches.length){$('impDutyRate').value=String(pctMatches[0]);if(pctMatches.length>1)$('impTaricExtraRate').value=String(pctMatches[1]);}
+ const nac=text.match(/(?:NAC|nationale aanvullende code|aanvullende code)\s*[:：]?\s*(\d{2,8})/i);if(nac)$('impTaricNac').value=nac[1];
+ const desc=text.split(/\n|\r/).map(x=>x.trim()).filter(Boolean).find(x=>x.length>12&&!/^(TARIC|goederencode|invoerrecht|douanetarief)/i.test(x));
+ if(desc&&!$('impTaricDescription').value)$('impTaricDescription').value=desc.slice(0,500);
+ $('impTaricDate').value=new Date().toISOString().slice(0,10);
+ $('impTaricNotes').value=('Overgenomen uit gekopieerde Gebruikstarief-tekst op '+$('impTaricDate').value+'. Controleer herkende waarden in de officiële bron.');
+ alert('Gegevens overgenomen waar herkenbaar. Controleer code, omschrijving, percentages, oorsprong en maatregelen handmatig voordat u opslaat of berekent.');
+}
 function data(){let x={};ids.forEach(k=>x[k]=$(k).value);x.comps=comps;x.id=currentId||('vva-'+Date.now());x.savedAt=new Date().toISOString();return x}
 function save(){if(!$('plate').value&&!$('vin').value)return alert('Vul eerst een kenteken of VIN in.');let x=data(),i=records.findIndex(r=>r.id===x.id);if(i<0)records.push(x);else records[i]=x;currentId=x.id;localStorage.setItem('vva_records',JSON.stringify(records));renderRecords();alert('Dossier lokaal opgeslagen.')}
 function renderRecords(){$('records').innerHTML=records.length?records.map((r,i)=>'<div class="entry"><b>'+esc(r.plate||r.vin)+' – '+esc((r.make||'')+' '+(r.model||''))+'</b><br><button class="secondary" onclick="loadRecord('+i+')">Openen</button> <button class="secondary" onclick="delRecord('+i+')">Verwijderen</button></div>').join(''):'Nog geen dossiers opgeslagen.'}
@@ -449,16 +472,16 @@ renderRecords();calc();
   byId('impBpmResult').innerHTML='<strong>Bruto BPM 2026 – personenauto (indicatie)</strong><br>CO₂: '+co2+' g/km<br>Basisbedrag volgens schijventarief: '+euro(gross-diesel)+'<br>Dieseltoeslag: '+euro(diesel)+'<br><strong>Bruto BPM: '+euro(gross)+'</strong><br><small>Controleer meetmethode, voertuigcategorie en officiële tarieftabel. Voor gebruikt voertuig moet daarna de toegestane afschrijving worden toegepast. Dit is geen BPM-aangifte.</small>';
  };
  window.calcImport=function(){
- const origin=byId('impOrigin').value,price=num('impPrice'),freight=num('impFreight'),other=num('impOther'),rate=num('impDutyRate'),inland=num('impInland'),rdw=num('impRdw'),admin=num('impAdmin'),vatRate=num('impVatRate')/100;
+ const origin=byId('impOrigin').value,price=num('impPrice'),freight=num('impFreight'),other=num('impOther'),rate=num('impDutyRate'),extraRate=num('impTaricExtraRate'),inland=num('impInland'),rdw=num('impRdw'),admin=num('impAdmin'),vatRate=num('impVatRate')/100;
  if(!price){alert('Vul eerst de aankoopprijs in.');return;}
- const base=price+freight,rateProvided=byId('impDutyRate').value.trim()!=='',duty=origin==='eu'?0:(rateProvided?base*rate/100:0),vatNew=byId('impNew').value==='new';
+ const base=price+freight,rateProvided=byId('impDutyRate').value.trim()!=='',duty=origin==='eu'?0:(rateProvided?base*(rate+extraRate)/100:0),vatNew=byId('impNew').value==='new';
  let vat=origin==='eu'?0:(base+duty+inland+other)*vatRate,vatText='';
  if(origin==='eu'){
   if(vatNew){vat=price*vatRate;vatText='Nieuw vervoermiddel: Nederlandse btw kan verschuldigd zijn, ook bij particuliere aankoop. Controleer de 6-maanden/6.000-km-regel.';}
   else {vatText='EU-aankoop: doorgaans geen invoer-btw. De btw-behandeling op de factuur hangt af van verkoper, marge-/btw-regime en zakelijke status.';}
  } else {vatText='Invoer van buiten de EU: indicatieve btw over een vereenvoudigde grondslag. Controleer de wettelijke btw-grondslag en eventuele bijzondere regelingen.';}
  const total=price+freight+duty+vat+other+inland+rdw+admin;
- let msg='<strong>Importkosten – indicatie</strong><br>Aankoopprijs: '+euro(price)+'<br>Transport/verzekering tot EU-grens: '+euro(freight)+'<br>Indicatieve invoerrechten: '+euro(duty)+'<br>Indicatieve btw: '+euro(vat)+'<br>Transport na EU-grens: '+euro(inland)+'<br>RDW/keuring: '+euro(rdw)+'<br>Overige kosten: '+euro(other+admin)+'<hr><strong>Indicatief totaal vóór BPM: '+euro(total)+'</strong>';
+ let msg='<strong>Importkosten – indicatie</strong><br>Aankoopprijs: '+euro(price)+'<br>Transport/verzekering tot EU-grens: '+euro(freight)+'<br>Invoerrecht + ingevulde aanvullende heffing: '+euro(duty)+'<br>Indicatieve btw: '+euro(vat)+'<br>Transport na EU-grens: '+euro(inland)+'<br>RDW/keuring: '+euro(rdw)+'<br>Overige kosten: '+euro(other+admin)+'<hr><strong>Indicatief totaal vóór BPM: '+euro(total)+'</strong>';
  byId('impResult').innerHTML=msg+'<br><small>Geen officiële aangifteberekening. Invoerrechtstarief, oorsprong, preferentie, btw-grondslag, vrijstellingen en bijzondere situaties moeten per voertuig worden gecontroleerd.</small>';
  byId('impVatNote').innerHTML='<strong>Btw-aandachtspunt</strong><br>'+vatText+'<br>Verkoper/factuur: '+byId('impSeller').value+' – '+byId('impVatSeller').selectedOptions[0].text;
  };
