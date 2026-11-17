@@ -1,6 +1,6 @@
-<!doctype html>
-<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0756a5"><title>VVA Check – Vehicle Valuation Assistant</title>
+html
+<html lang="nl"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#0756a5" name="theme-color"/><title>VVA Check – Vehicle Valuation Assistant</title>
 <style>
 :root{--blue:#0876cf;--deep:#0452a5;--navy:#091d50;--pale:#eaf3ff;--line:#b8d1ef;--ink:#10234b;--green:#c8f2c5}
 *{box-sizing:border-box}body{margin:0;background:#eaf2fc;color:var(--ink);font:15px Arial,Helvetica,sans-serif}
@@ -43,138 +43,134 @@ textarea{min-height:75px}
 @media print{.hero{height:130px}.tabs,.lookup button,.actions,.footer .actions{display:none!important}.tabpane{display:block!important}.columns{grid-template-columns:1fr 1fr}.panel,.card{box-shadow:none;break-inside:avoid}}
 .taric-search-row{display:flex;gap:8px;align-items:stretch}.taric-search-row input{flex:1;min-width:0}.taric-search-button{white-space:nowrap}.taric-transfer{margin:10px 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f4f8ff}.taric-transfer p{margin:0 0 9px}.taric-transfer button{margin-right:8px}.taric-transfer .hint{display:block;margin-top:8px}@media(max-width:620px){.taric-search-row{flex-direction:column}.taric-search-button{width:100%}}
 </style></head><body>
-<header class="hero" aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon"></header>
+<header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
 <section class="panel lookup">
- <div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><input id="plate" placeholder="Bijv. XX-123-X" maxlength="8" autocomplete="off"></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
- <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"></div><button onclick="checkVIN()">✓ VIN controleren</button></div>
- <div id="status" class="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
+<div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><input autocomplete="off" id="plate" maxlength="8" placeholder="Bijv. XX-123-X"/></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
+<div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button onclick="checkVIN()">✓ VIN controleren</button></div>
+<div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
 <nav class="tabs">
- <button class="tab active" onclick="showTab('vehicle',this)">🚘 Voertuig</button><button class="tab" onclick="showTab('import',this)">▤ Import & BPM</button><button class="tab" onclick="showTab('taric',this)">▣ TARIC & Oorsprong</button><button class="tab" onclick="showTab('dossier',this)">▱ Dossierbeheer</button>
+<button class="tab active" onclick="showTab('vehicle',this)">🚘 Voertuig</button><button class="tab" onclick="showTab('import',this)">▤ Import &amp; BPM</button><button class="tab" onclick="showTab('dossier',this)">▱ Dossierbeheer</button>
 </nav>
-<section id="vehicle" class="tabpane active"><div class="columns">
- <div class="panel card"><div class="cardhead">🚘 Voertuiggegevens (RDW)</div><div class="cardbody"><div class="vehiclegrid">
- <label for="make">Merk</label><input id="make"><label for="model">Model</label><input id="model">
- <label for="first">Datum eerste toelating</label><input id="first" type="date"><label for="km">Tellerstand</label><input id="km" type="number" placeholder="– km">
- <label for="category">Voertuigcategorie</label><input id="category"><label for="body">Carrosserie</label><input id="body">
- <label for="color">Kleur</label><input id="color"><label for="fuel">Brandstof</label><input id="fuel">
- <label for="power">Vermogen (kW)</label><input id="power" type="number" placeholder="– kW"><label for="epower">Elektrisch vermogen</label><input id="epower" type="number" placeholder="– kW">
- <label for="battery">Accucapaciteit</label><input id="battery" placeholder="– kWh"><label for="range">WLTP-actieradius</label><input id="range" placeholder="– km">
- <label for="mass">Massa (rijklaar)</label><input id="mass" type="number" placeholder="– kg"><label for="catalogue">Catalogusprijs (incl. BTW)</label><input id="catalogue" placeholder="€ –">
- <label for="apk">APK-vervaldatum</label><input id="apk" type="date"><label for="co2">CO₂-uitstoot (WLTP)</label><input id="co2" type="number" placeholder="– g/km">
- <label for="emission">Emissieklasse</label><input id="emission"><label for="nlfirst">Datum eerste toelating NL</label><input id="nlfirst" type="date">
- <label for="seats">Aantal zitplaatsen</label><input id="seats" type="number">
- <label for="doors">Aantal deuren</label><input id="doors" type="number">
- <label for="cylinders">Aantal cilinders</label><input id="cylinders" type="number">
- <label for="displacement">Cilinderinhoud (cm³)</label><input id="displacement" type="number">
- <label for="massEmpty">Massa ledig voertuig (kg)</label><input id="massEmpty" type="number">
- <label for="maxMass">Toegestane max. massa (kg)</label><input id="maxMass" type="number">
- <label for="towBraked">Max. trekgewicht geremd (kg)</label><input id="towBraked" type="number">
- <label for="towUnbraked">Max. trekgewicht ongeremd (kg)</label><input id="towUnbraked" type="number">
- <label for="length">Lengte (mm)</label><input id="length" type="number">
- <label for="width">Breedte (mm)</label><input id="width" type="number">
- <label for="height">Hoogte (mm)</label><input id="height" type="number">
- <label for="wheelbase">Wielbasis (mm)</label><input id="wheelbase" type="number">
- <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory">
- <label for="vehicleType">Type / uitvoering</label><input id="vehicleType">
- <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date">
- <div class="section-subtitle" style="grid-column:1/-1;margin-top:12px;font-weight:700">Eigenaren volgens RDW-Voertuigrapport</div>
- <label for="ownersPrivate">Eigenaren particulier</label><input id="ownersPrivate" type="number" min="0" step="1" placeholder="Aantal uit RDW-rapport">
- <label for="ownersBusiness">Eigenaren zakelijk</label><input id="ownersBusiness" type="number" min="0" step="1" placeholder="Aantal uit RDW-rapport">
- <label for="ownersTotal">Totaal aantal eigenaren</label><input id="ownersTotal" type="number" min="0" placeholder="Automatisch berekend" readonly>
- <div style="grid-column:1/-1;border:1px solid #d5e2f1;border-radius:10px;padding:12px;margin:8px 0">
-  <b>RDW-Voertuigrapport inlezen (PDF)</b>
-  <p class="hint">Upload het officiële RDW-Voertuigrapport. VVA probeert de aantallen particuliere en zakelijke eigenaren uit de PDF-tekst te herkennen. Controleer de gevonden aantallen altijd met het rapport.</p>
-  <input id="rdwReportFile" type="file" accept="application/pdf,.pdf" style="max-width:100%">
-  <div class="actions"><button type="button" class="secondary" onclick="importRDWReport()">RDW-rapport inlezen</button></div>
-  <div id="rdwReportStatus" class="hint" aria-live="polite">Nog geen rapport gekozen.</div>
-  <details style="margin-top:8px"><summary>Gelezen PDF-tekst bekijken</summary><pre id="rdwReportText" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px"></pre></details>
- </div>
- <label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number">
- <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined">
- <label for="fuelCity">Verbruik stad</label><input id="fuelCity">
- <label for="fuelOutside">Verbruik buitenweg</label><input id="fuelOutside">
- <label for="co2Weighted">CO₂-uitstoot gewogen (g/km)</label><input id="co2Weighted">
- <label for="emissionCode">Emissiecode / norm</label><input id="emissionCode">
- <label for="electricPower">Elektrisch vermogen (kW)</label><input id="electricPower" type="number">
- <label for="hybridClass">Hybride voertuigklasse</label><input id="hybridClass">
- <label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement">
- <label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number">
- <label for="rdwsource">RDW-bron / status</label><input id="rdwsource" value="Nog niet opgehaald" readonly>
- </div><p class="hint">De openbare RDW-kenteken-API levert deze aantallen niet rechtstreeks. Je kunt ze hierboven proberen in te lezen vanuit het officiële RDW-Voertuigrapport (PDF); controleer de herkenning altijd en sla daarna het dossier op.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
- <div>
- <div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
-  <div class="actions"><button onclick="lookupRecalls()">Terugroepacties controleren</button></div>
-  <div id="recallSummary" class="result">Voer eerst een kentekenopvraging uit en controleer daarna de terugroepacties.</div>
-  <div id="recallList" aria-live="polite"></div>
-  <input type="hidden" id="recallsData" value="">
-  <p class="hint">Bron: officiële RDW-datasets Terugroep_actie_status, Terugroep_actie en Terugroep_actie_risico. Status O = openstaand; P = producent heeft herstel gemeld. <a href="https://ovi.rdw.nl/" target="_blank" rel="noopener">Controleer ook in de officiële RDW-kentekencheck</a>.</p>
- </div></div>
-  <div class="panel card"><div class="cardhead">▦ Import & BPM (personenauto)</div><div class="cardbody">
-   <div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" type="number" min="0" step=".01" placeholder="€ 0,00"></div>
-   <div class="rowfield"><label>BPM (bruto ingevoerd)</label><input id="grossBpm" type="number" min="0" step=".01" placeholder="€ 0,00"></div>
-   <div class="rowfield"><label>Verschuldigde BPM (indicatief)</label><input id="netBpm" readonly placeholder="€ 0,00"></div>
-   <div class="actions"><button onclick="calcBpm()">▦ Import & BPM berekenen</button></div><div class="result" id="bpmResult">Vul bruto BPM en afschrijving in op het tabblad Import & BPM.</div>
-  </div></div>
-  <div class="panel card"><div class="cardhead">🌐 TARIC-code & Oorsprong</div><div class="cardbody">
-   <div class="rowfield"><label>Goederencode (HS / GN / TARIC)</label><div class="taric-search-row"><input id="taricCode" placeholder="Plak of voer de gekozen code in" autocomplete="off"><button type="button" class="secondary taric-search-button" onclick="openOfficialTariff()" aria-label="Open officieel Gebruikstarief" title="Zoek in het officiële Gebruikstarief">🔎 Zoek in Gebruikstarief</button></div></div>
-   <div class="taric-transfer"><p><strong>Code gekozen in het Gebruikstarief?</strong> Plak de code hierboven en neem hem met één klik over in het VVA-dossier.</p><button type="button" onclick="transferTaricCode()">Code overnemen in VVA</button><span id="taricTransferStatus" class="hint" aria-live="polite">De officiële tariefpagina opent in een nieuw tabblad.</span></div>
-   <div class="rowfield"><label>Officiële goederenomschrijving</label><input id="goodsDescription" placeholder="–"></div>
-   <div class="rowfield"><label>Invoerrecht (EU)</label><input id="dutyRate" type="number" step=".01" placeholder="–"></div>
-   <div class="rowfield"><label>Maatregelen</label><input id="measures" placeholder="–"></div>
-   <div class="rowfield"><label>Oorsprong / Preferentie</label><select id="origin"><option value="">Selecteer</option><option>EU</option><option>Niet-preferentiële oorsprong</option><option>Preferentiële oorsprong</option><option>Onbekend / te controleren</option></select></div>
-   <div class="actions"><a class="btn secondary" href="https://tarief.douane.nl/" target="_blank" rel="noopener">↗ Gebruikstarief (Douane)</a><a class="btn secondary" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" target="_blank" rel="noopener">EU TARIC ↗</a></div>
-   <p class="hint">Let op: het officiële Gebruikstarief is een externe website. De geselecteerde regel kan niet automatisch teruggestuurd worden naar VVA. Controleer de code en plak deze hier; VVA zet hem vervolgens in de dossier- en importvelden. Tariefpercentages en maatregelen worden niet automatisch ingevuld zonder een gevalideerde gegevenskoppeling.</p>
-  </div></div>
-  <div class="panel card"><div class="cardhead">↗ Marktinformatie (zoek in marktplaatsen)</div><div class="cardbody"><div class="marketlinks">
-   <a class="btn secondary" href="#" onclick="market('autoscout24.nl');return false">AutoScout24 ↗</a><a class="btn secondary" href="#" onclick="market('marktplaats.nl');return false">Marktplaats ↗</a><a class="btn secondary" href="#" onclick="market('mobile.de');return false">mobile.de ↗</a>
-  </div><p class="hint">Zoeklinks openen vergelijkbare advertenties. Advertentiegegevens worden niet automatisch ingelezen.</p></div></div>
- </div>
-</div></section>
-<section id="import" class="tabpane"><div class="columns">
- <div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
- <div><label>Herkomst</label><select id="importOrigin"><option value="eu">EU</option><option value="non-eu">Buiten EU</option></select></div>
- <div><label>Aankoopprijs (€)</label><input id="importPrice" type="number" min="0" step=".01"></div>
- <div><label>Transport tot EU-grens (€)</label><input id="freight" type="number" min="0" step=".01" value="0"></div>
- <div><label>Invoerrecht (%)</label><input id="importDuty" type="number" min="0" step=".01"></div>
- <div><label>BTW-tarief (%)</label><input id="vatRate" type="number" min="0" step=".01" value="21"></div>
- <div><label>Overige kosten (€)</label><input id="otherCosts" type="number" min="0" step=".01" value="0"></div>
- <div><label>Transport na EU-grens (€)</label><input id="inland" type="number" min="0" step=".01" value="0"></div>
- <div><label>RDW / keuring (€)</label><input id="rdwCosts" type="number" min="0" step=".01" value="0"></div>
- </div><div class="actions"><button onclick="calcImport()">Bereken importindicatie</button></div><div id="importResult" class="result">Vul de gegevens in om een indicatie te berekenen.</div>
- <p class="hint">Vereenvoudigde indicatie. Controleer douanewaarde, oorsprong, preferentie, btw-grondslag, bijzondere regelingen en eventuele vrijstellingen afzonderlijk.</p></div></div>
- <div class="panel card"><div class="cardhead">BPM-afschrijving</div><div class="cardbody"><div class="formgrid">
- <div><label>Bruto BPM (€)</label><input id="bpmGross2" type="number" min="0" step=".01"></div><div><label>Afschrijving (%)</label><input id="depreciation" type="number" min="0" max="100" step=".01"></div>
- <div class="wide"><label>Methode / onderbouwing</label><select id="bpmMethod"><option>Koerslijst</option><option>Taxatierapport</option><option>Forfaitaire tabel</option><option>Anders / nader te onderbouwen</option></select></div>
- </div><div class="actions"><button onclick="calcBpmFromImport()">Bereken BPM-indicatie</button></div><div id="bpmDetail" class="result">Vul bruto BPM en afschrijving in.</div>
- <p class="hint">VVA stelt niet automatisch het juiste BPM-tarief vast. Controleer tariefjaar, CO₂-meetmethode en toegestane afschrijvingsmethode.</p></div></div>
-</div></section>
-<section id="taric" class="tabpane"><div class="panel card"><div class="cardhead">TARIC-code, oorsprong en maatregelen</div><div class="cardbody"><div class="formgrid">
- <div><label>TARIC-code (10 cijfers)</label><input id="taricCodeFull" maxlength="10" placeholder="8703801000"></div><div><label>Land van oorsprong</label><input id="originCountry" placeholder="Land van oorsprong"></div>
- <div class="wide"><label>Officiële goederenomschrijving</label><input id="taricDescription"></div>
- <div><label>Invoerrecht (%)</label><input id="taricRate" type="number" step=".01"></div><div><label>Preferentieel bewijs</label><input id="proof" placeholder="Bijv. oorsprongsverklaring / EUR.1"></div>
- <div><label>Datum tariefcontrole</label><input id="taricChecked" type="date"></div><div><label>Aanvullende code</label><input id="additionalCode"></div>
- <div class="wide"><label>Maatregelen en opmerkingen</label><textarea id="taricMeasures"></textarea></div></div>
- <div class="actions"><a class="btn" href="https://tarief.douane.nl/" target="_blank" rel="noopener">Open Gebruikstarief</a><a class="btn" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" target="_blank" rel="noopener">Open EU TARIC</a></div>
-</div></div></section>
-<section id="dossier" class="tabpane"><div class="panel card"><div class="cardhead">Dossierbeheer & export</div><div class="cardbody">
- <p class="hint">Dossiers worden lokaal in deze browser bewaard. Exporteer regelmatig een back-up. De gegevens worden niet naar een server verzonden.</p>
- <div class="actions"><button onclick="saveRecord()">Huidig dossier opslaan</button><button class="secondary" onclick="exportCSV()">CSV export</button><button class="secondary" onclick="exportJSON()">JSON export</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
-</div></div></section>
+<section class="tabpane active" id="vehicle"><div class="columns">
+<div class="panel card"><div class="cardhead">🚘 Voertuiggegevens (RDW)</div><div class="cardbody"><div class="vehiclegrid">
+<label for="make">Merk</label><input id="make"/><label for="model">Model</label><input id="model"/>
+<label for="first">Datum eerste toelating</label><input id="first" type="date"/><label for="km">Tellerstand</label><input id="km" placeholder="– km" type="number"/>
+<label for="category">Voertuigcategorie</label><input id="category"/><label for="body">Carrosserie</label><input id="body"/>
+<label for="color">Kleur</label><input id="color"/><label for="fuel">Brandstof</label><input id="fuel"/>
+<label for="power">Vermogen (kW)</label><input id="power" placeholder="– kW" type="number"/><label for="epower">Elektrisch vermogen</label><input id="epower" placeholder="– kW" type="number"/>
+<label for="battery">Accucapaciteit</label><input id="battery" placeholder="– kWh"/><label for="range">WLTP-actieradius</label><input id="range" placeholder="– km"/>
+<label for="mass">Massa (rijklaar)</label><input id="mass" placeholder="– kg" type="number"/><label for="catalogue">Catalogusprijs (incl. BTW)</label><input id="catalogue" placeholder="€ –"/>
+<label for="apk">APK-vervaldatum</label><input id="apk" type="date"/><label for="co2">CO₂-uitstoot (WLTP)</label><input id="co2" placeholder="– g/km" type="number"/>
+<label for="emission">Emissieklasse</label><input id="emission"/><label for="nlfirst">Datum eerste toelating NL</label><input id="nlfirst" type="date"/>
+<label for="seats">Aantal zitplaatsen</label><input id="seats" type="number"/>
+<label for="doors">Aantal deuren</label><input id="doors" type="number"/>
+<label for="cylinders">Aantal cilinders</label><input id="cylinders" type="number"/>
+<label for="displacement">Cilinderinhoud (cm³)</label><input id="displacement" type="number"/>
+<label for="massEmpty">Massa ledig voertuig (kg)</label><input id="massEmpty" type="number"/>
+<label for="maxMass">Toegestane max. massa (kg)</label><input id="maxMass" type="number"/>
+<label for="towBraked">Max. trekgewicht geremd (kg)</label><input id="towBraked" type="number"/>
+<label for="towUnbraked">Max. trekgewicht ongeremd (kg)</label><input id="towUnbraked" type="number"/>
+<label for="length">Lengte (mm)</label><input id="length" type="number"/>
+<label for="width">Breedte (mm)</label><input id="width" type="number"/>
+<label for="height">Hoogte (mm)</label><input id="height" type="number"/>
+<label for="wheelbase">Wielbasis (mm)</label><input id="wheelbase" type="number"/>
+<label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory"/>
+<label for="vehicleType">Type / uitvoering</label><input id="vehicleType"/>
+<label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date"/>
+<div class="section-subtitle" style="grid-column:1/-1;margin-top:12px;font-weight:700">Eigenaren volgens RDW-Voertuigrapport</div>
+<label for="ownersPrivate">Eigenaren particulier</label><input id="ownersPrivate" min="0" placeholder="Aantal uit RDW-rapport" step="1" type="number"/>
+<label for="ownersBusiness">Eigenaren zakelijk</label><input id="ownersBusiness" min="0" placeholder="Aantal uit RDW-rapport" step="1" type="number"/>
+<label for="ownersTotal">Totaal aantal eigenaren</label><input id="ownersTotal" min="0" placeholder="Automatisch berekend" readonly="" type="number"/>
+<div style="grid-column:1/-1;border:1px solid #d5e2f1;border-radius:10px;padding:12px;margin:8px 0">
+<b>RDW-Voertuigrapport inlezen (PDF)</b>
+<p class="hint">Upload het officiële RDW-Voertuigrapport. VVA probeert de aantallen particuliere en zakelijke eigenaren uit de PDF-tekst te herkennen. Controleer de gevonden aantallen altijd met het rapport.</p>
+<input accept="application/pdf,.pdf" id="rdwReportFile" style="max-width:100%" type="file"/>
+<div class="actions"><button class="secondary" onclick="importRDWReport()" type="button">RDW-rapport inlezen</button></div>
+<div aria-live="polite" class="hint" id="rdwReportStatus">Nog geen rapport gekozen.</div>
+<details style="margin-top:8px"><summary>Gelezen PDF-tekst bekijken</summary><pre id="rdwReportText" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px"></pre></details>
+</div>
 
+<label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined"/>
+<label for="fuelCity">Verbruik stad</label><input id="fuelCity"/>
+<label for="fuelOutside">Verbruik buitenweg</label><input id="fuelOutside"/>
+<label for="co2Weighted">CO₂-uitstoot gewogen (g/km)</label><input id="co2Weighted"/>
+<label for="emissionCode">Emissiecode / norm</label><input id="emissionCode"/>
+<label for="electricPower">Elektrisch vermogen (kW)</label><input id="electricPower" type="number"/>
+<label for="hybridClass">Hybride voertuigklasse</label><input id="hybridClass"/>
+<label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement"/>
+<label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number"/>
+<label for="rdwsource">RDW-bron / status</label><input id="rdwsource" readonly="" value="Nog niet opgehaald"/>
+</div><p class="hint">De openbare RDW-kenteken-API levert deze aantallen niet rechtstreeks. Je kunt ze hierboven proberen in te lezen vanuit het officiële RDW-Voertuigrapport (PDF); controleer de herkenning altijd en sla daarna het dossier op.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
+<div>
+<div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
+<div class="actions"><button onclick="lookupRecalls()">Terugroepacties controleren</button></div>
+<div class="result" id="recallSummary">Voer eerst een kentekenopvraging uit en controleer daarna de terugroepacties.</div>
+<div aria-live="polite" id="recallList"></div>
+<input id="recallsData" type="hidden" value=""/>
+<p class="hint">Bron: officiële RDW-datasets Terugroep_actie_status, Terugroep_actie en Terugroep_actie_risico. Status O = openstaand; P = producent heeft herstel gemeld. <a href="https://ovi.rdw.nl/" rel="noopener" target="_blank">Controleer ook in de officiële RDW-kentekencheck</a>.</p>
+</div></div>
+<div class="panel card"><div class="cardhead">↗ Marktinformatie (zoek in marktplaatsen)</div><div class="cardbody"><div class="marketlinks">
+<a class="btn secondary" href="#" onclick="market('autoscout24.nl');return false">AutoScout24 ↗</a><a class="btn secondary" href="#" onclick="market('marktplaats.nl');return false">Marktplaats ↗</a><a class="btn secondary" href="#" onclick="market('mobile.de');return false">mobile.de ↗</a>
+</div><p class="hint">Zoeklinks openen vergelijkbare advertenties. Advertentiegegevens worden niet automatisch ingelezen.</p></div></div>
+</div>
+</div></section>
+<section class="tabpane" id="import"><div class="columns"><p class="hint">Alle gegevens over invoer, goederencode (HS/GN/TARIC), oorsprong, invoerrechten en maatregelen staan hier bij elkaar.</p>
+<div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
+<div><label>Herkomst</label><select id="importOrigin"><option value="eu">EU</option><option value="non-eu">Buiten EU</option></select></div>
+<div><label>Aankoopprijs (€)</label><input id="importPrice" min="0" step=".01" type="number"/></div>
+<div><label>Transport tot EU-grens (€)</label><input id="freight" min="0" step=".01" type="number" value="0"/></div>
+<div><label>Invoerrecht (%)</label><input id="importDuty" min="0" step=".01" type="number"/></div>
+<div><label>BTW-tarief (%)</label><input id="vatRate" min="0" step=".01" type="number" value="21"/></div>
+<div><label>Overige kosten (€)</label><input id="otherCosts" min="0" step=".01" type="number" value="0"/></div>
+<div><label>Transport na EU-grens (€)</label><input id="inland" min="0" step=".01" type="number" value="0"/></div>
+<div><label>RDW / keuring (€)</label><input id="rdwCosts" min="0" step=".01" type="number" value="0"/></div>
+</div><div class="actions"><button onclick="calcImport()">Bereken importindicatie</button></div><div class="result" id="importResult">Vul de gegevens in om een indicatie te berekenen.</div>
+<p class="hint">Vereenvoudigde indicatie. Controleer douanewaarde, oorsprong, preferentie, btw-grondslag, bijzondere regelingen en eventuele vrijstellingen afzonderlijk.</p></div></div>
+<div class="panel card"><div class="cardhead">BPM-afschrijving</div><div class="cardbody"><div class="formgrid">
+<div><label>Bruto BPM (€)</label><input id="bpmGross2" min="0" step=".01" type="number"/></div><div><label>Afschrijving (%)</label><input id="depreciation" max="100" min="0" step=".01" type="number"/></div>
+<div class="wide"><label>Methode / onderbouwing</label><select id="bpmMethod"><option>Koerslijst</option><option>Taxatierapport</option><option>Forfaitaire tabel</option><option>Anders / nader te onderbouwen</option></select></div>
+</div><div class="actions"><button onclick="calcBpmFromImport()">Bereken BPM-indicatie</button></div><div class="result" id="bpmDetail">Vul bruto BPM en afschrijving in.</div>
+<p class="hint">VVA stelt niet automatisch het juiste BPM-tarief vast. Controleer tariefjaar, CO₂-meetmethode en toegestane afschrijvingsmethode.</p></div></div>
+<div class="panel card"><div class="cardhead">▦ Import &amp; BPM (personenauto)</div><div class="cardbody">
+<div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
+<div class="rowfield"><label>BPM (bruto ingevoerd)</label><input id="grossBpm" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
+<div class="rowfield"><label>Verschuldigde BPM (indicatief)</label><input id="netBpm" placeholder="€ 0,00" readonly=""/></div>
+<div class="actions"><button onclick="calcBpm()">▦ Import &amp; BPM berekenen</button></div><div class="result" id="bpmResult">Vul bruto BPM en afschrijving in onder Import &amp; BPM.</div>
+<div class="rowfield"><label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number"/></div></div></div><div class="panel card"><div class="cardhead">🌐 TARIC-code &amp; Oorsprong</div><div class="cardbody">
+<div class="rowfield"><label>Goederencode (HS / GN / TARIC)</label><div class="taric-search-row"><input autocomplete="off" id="taricCode" placeholder="Plak of voer de gekozen code in"/><button aria-label="Open officieel Gebruikstarief" class="secondary taric-search-button" onclick="openOfficialTariff()" title="Zoek in het officiële Gebruikstarief" type="button">🔎 Zoek in Gebruikstarief</button></div></div>
+<div class="taric-transfer"><p><strong>Code gekozen in het Gebruikstarief?</strong> Plak de code hierboven en neem hem met één klik over in het VVA-dossier.</p><button onclick="transferTaricCode()" type="button">Code overnemen in VVA</button><span aria-live="polite" class="hint" id="taricTransferStatus">De officiële tariefpagina opent in een nieuw tabblad.</span></div>
+<div class="rowfield"><label>Officiële goederenomschrijving</label><input id="goodsDescription" placeholder="–"/></div>
+<div class="rowfield"><label>Invoerrecht (EU)</label><input id="dutyRate" placeholder="–" step=".01" type="number"/></div>
+<div class="rowfield"><label>Maatregelen</label><input id="measures" placeholder="–"/></div>
+<div class="rowfield"><label>Oorsprong / Preferentie</label><select id="origin"><option value="">Selecteer</option><option>EU</option><option>Niet-preferentiële oorsprong</option><option>Preferentiële oorsprong</option><option>Onbekend / te controleren</option></select></div>
+<div class="actions"><a class="btn secondary" href="https://tarief.douane.nl/" rel="noopener" target="_blank">↗ Gebruikstarief (Douane)</a><a class="btn secondary" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">EU TARIC ↗</a></div>
+<p class="hint">Let op: het officiële Gebruikstarief is een externe website. De geselecteerde regel kan niet automatisch teruggestuurd worden naar VVA. Controleer de code en plak deze hier; VVA zet hem vervolgens in de dossier- en importvelden. Tariefpercentages en maatregelen worden niet automatisch ingevuld zonder een gevalideerde gegevenskoppeling.</p>
+</div></div><div class="panel card"><div class="cardhead">TARIC-code, oorsprong en maatregelen</div><div class="cardbody"><div class="formgrid">
+<div><label>TARIC-code (10 cijfers)</label><input id="taricCodeFull" maxlength="10" placeholder="8703801000"/></div><div><label>Land van oorsprong</label><input id="originCountry" placeholder="Land van oorsprong"/></div>
+<div class="wide"><label>Officiële goederenomschrijving</label><input id="taricDescription"/></div>
+<div><label>Invoerrecht (%)</label><input id="taricRate" step=".01" type="number"/></div><div><label>Preferentieel bewijs</label><input id="proof" placeholder="Bijv. oorsprongsverklaring / EUR.1"/></div>
+<div><label>Datum tariefcontrole</label><input id="taricChecked" type="date"/></div><div><label>Aanvullende code</label><input id="additionalCode"/></div>
+<div class="wide"><label>Maatregelen en opmerkingen</label><textarea id="taricMeasures"></textarea></div></div>
+<div class="actions"><a class="btn" href="https://tarief.douane.nl/" rel="noopener" target="_blank">Open Gebruikstarief</a><a class="btn" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">Open EU TARIC</a></div>
+</div></div></div></section>
+<section class="tabpane" id="dossier"><div class="panel card"><div class="cardhead">Dossierbeheer &amp; export</div><div class="cardbody">
+<p class="hint">Dossiers worden lokaal in deze browser bewaard. Exporteer regelmatig een back-up. De gegevens worden niet naar een server verzonden.</p>
+<div class="actions"><button onclick="saveRecord()">Huidig dossier opslaan</button><button class="secondary" onclick="exportCSV()">CSV export</button><button class="secondary" onclick="exportJSON()">JSON export</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
+</div></div></section>
 <section class="panel card" id="rapport-kopen" style="margin-top:16px">
- <div class="cardhead">VVA Check – Kies uw rapport</div>
- <div class="cardbody">
-  <p class="hint">Voor autobedrijven en professionele auto-importeurs. Prijzen zijn exclusief 21% btw. De online betaalfunctie wordt pas actief nadat de betaalprovider en zakelijke betaalgegevens zijn gekoppeld.</p>
-  <div class="pricing-grid">
-   <article class="price-card"><h3>Basis</h3><div class="price">€ 7,95 <small>excl. btw</small></div><p>Voertuigoverzicht en beschikbare RDW-gegevens.</p><ul><li>Voertuigkenmerken</li><li>Kentekenregistratiegegevens</li><li>PDF-voertuigoverzicht</li></ul><button onclick="chooseReport('Basis',7.95)">Kies Basis</button></article>
-   <article class="price-card featured"><div class="price-label">Meest gekozen</div><h3>Import</h3><div class="price">€ 14,95 <small>excl. btw</small></div><p>Een praktisch dossier voor de voorbereiding van auto-import.</p><ul><li>Alles uit Basis</li><li>Importkostenindicatie</li><li>BPM-werkberekening</li><li>TARIC en oorsprong vastleggen</li><li>PDF-importdossier</li></ul><button onclick="chooseReport('Import',14.95)">Kies Import</button></article>
-   <article class="price-card"><h3>Compleet</h3><div class="price">€ 24,95 <small>excl. btw</small></div><p>Uitgebreidere documentatie voor het voertuigdossier.</p><ul><li>Alles uit Import</li><li>Marktvergelijkingsnotities</li><li>Uitgebreide dossierdocumentatie</li><li>PDF-rapport en CSV-export</li></ul><button onclick="chooseReport('Compleet',24.95)">Kies Compleet</button></article>
-  </div>
-  <div id="checkout-demo" class="result" aria-live="polite">Selecteer een rapport om de bestelling samen te stellen. Er wordt nog geen betaling uitgevoerd.</div>
-  <div class="actions"><button class="secondary" onclick="window.print()">Voorbeeld rapport afdrukken</button><a class="btn secondary" href="#dossier">Naar dossierbeheer</a></div>
- </div>
+<div class="cardhead">VVA Check – Kies uw rapport</div>
+<div class="cardbody">
+<p class="hint">Voor autobedrijven en professionele auto-importeurs. Prijzen zijn exclusief 21% btw. De online betaalfunctie wordt pas actief nadat de betaalprovider en zakelijke betaalgegevens zijn gekoppeld.</p>
+<div class="pricing-grid">
+<article class="price-card"><h3>Basis</h3><div class="price">€ 7,95 <small>excl. btw</small></div><p>Voertuigoverzicht en beschikbare RDW-gegevens.</p><ul><li>Voertuigkenmerken</li><li>Kentekenregistratiegegevens</li><li>PDF-voertuigoverzicht</li></ul><button onclick="chooseReport('Basis',7.95)">Kies Basis</button></article>
+<article class="price-card featured"><div class="price-label">Meest gekozen</div><h3>Import</h3><div class="price">€ 14,95 <small>excl. btw</small></div><p>Een praktisch dossier voor de voorbereiding van auto-import.</p><ul><li>Alles uit Basis</li><li>Importkostenindicatie</li><li>BPM-werkberekening</li><li>TARIC en oorsprong vastleggen</li><li>PDF-importdossier</li></ul><button onclick="chooseReport('Import',14.95)">Kies Import</button></article>
+<article class="price-card"><h3>Compleet</h3><div class="price">€ 24,95 <small>excl. btw</small></div><p>Uitgebreidere documentatie voor het voertuigdossier.</p><ul><li>Alles uit Import</li><li>Marktvergelijkingsnotities</li><li>Uitgebreide dossierdocumentatie</li><li>PDF-rapport en CSV-export</li></ul><button onclick="chooseReport('Compleet',24.95)">Kies Compleet</button></article>
+</div>
+<div aria-live="polite" class="result" id="checkout-demo">Selecteer een rapport om de bestelling samen te stellen. Er wordt nog geen betaling uitgevoerd.</div>
+<div class="actions"><button class="secondary" onclick="window.print()">Voorbeeld rapport afdrukken</button><a class="btn secondary" href="#dossier">Naar dossierbeheer</a></div>
+</div>
 </section>
 <style>
 .pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
@@ -201,7 +197,6 @@ function chooseReport(name,price){
  '<button class="secondary" onclick="alert(&quot;De betaalmodule is nog niet gekoppeld. Er wordt geen betaling uitgevoerd.&quot;)">Betaling nog niet beschikbaar</button>';
 }
 </script>
-
 <section class="panel footer"><div class="actions"><button class="secondary" onclick="window.print()">▤ PDF rapport</button><button class="secondary" onclick="exportCSV()">▦ Excel / CSV export</button><button class="secondary" onclick="exportJSON()">CSV / JSON</button><button class="secondary" onclick="window.print()">▣ Printen</button><button class="secondary" onclick="showTab('dossier',document.querySelectorAll('.tab')[3])">◉ Voorbeeld rapport</button></div><div class="rvg">RVG</div></section>
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
