@@ -78,6 +78,9 @@ textarea{min-height:75px}
  <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory">
  <label for="vehicleType">Type / uitvoering</label><input id="vehicleType">
  <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date">
+ <label for="ownersPrivate">Eigenaren particulier (RDW-rapport)</label><input id="ownersPrivate" type="number" min="0" placeholder="Vul aantal in">
+ <label for="ownersBusiness">Eigenaren zakelijk (RDW-rapport)</label><input id="ownersBusiness" type="number" min="0" placeholder="Vul aantal in">
+ <label for="ownersTotal">Totaal aantal eigenaren</label><input id="ownersTotal" type="number" min="0" placeholder="Automatisch berekend" readonly>
  <label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number">
  <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined">
  <label for="fuelCity">Verbruik stad</label><input id="fuelCity">
@@ -89,7 +92,7 @@ textarea{min-height:75px}
  <label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement">
  <label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number">
  <label for="rdwsource">RDW-bron / status</label><input id="rdwsource" value="Nog niet opgehaald" readonly>
- </div><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
+ </div><p class="hint">Eigenarenaantallen invullen vanaf het RDW-Voertuigrapport. De openbare RDW-Open-Data API levert deze privé/zakelijk-verdeling niet rechtstreeks; VVA verzint deze aantallen dus niet.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
  <div>
   <div class="panel card"><div class="cardhead">▦ Import & BPM (personenauto)</div><div class="cardbody">
    <div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" type="number" min="0" step=".01" placeholder="€ 0,00"></div>
@@ -109,6 +112,13 @@ textarea{min-height:75px}
    <a class="btn secondary" href="#" onclick="market('autoscout24.nl');return false">AutoScout24 ↗</a><a class="btn secondary" href="#" onclick="market('marktplaats.nl');return false">Marktplaats ↗</a><a class="btn secondary" href="#" onclick="market('mobile.de');return false">mobile.de ↗</a>
   </div><p class="hint">Zoeklinks openen vergelijkbare advertenties. Advertentiegegevens worden niet automatisch ingelezen.</p></div></div>
  </div>
+ <div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
+  <div class="actions"><button onclick="lookupRecalls()">Terugroepacties controleren</button></div>
+  <div id="recallSummary" class="result">Voer eerst een kentekenopvraging uit en controleer daarna de terugroepacties.</div>
+  <div id="recallList" aria-live="polite"></div>
+  <input type="hidden" id="recallsData" value="">
+  <p class="hint">Bron: RDW Open Data. Status ‘Openstaand’ betekent dat de producent herstel heeft gemeld als nog uit te voeren. Controleer bij twijfel altijd de RDW-kentekencheck of de dealer.</p>
+ </div></div>
 </div></section>
 <section id="import" class="tabpane"><div class="columns">
  <div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
@@ -184,9 +194,11 @@ function chooseReport(name,price){
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
+function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):''}
+document.addEventListener('input',e=>{if(e.target&&['ownersPrivate','ownersBusiness'].includes(e.target.id))updateOwnerTotal()});
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
 function showTab(id,btn){document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');if(btn)btn.classList.add('active')}
 function set(id,value){if(value!==undefined&&value!==null&&value!=='')$(id).value=value}
@@ -197,7 +209,7 @@ async function lookupRDW(){
  if(!plate){$('status').textContent='Vul eerst een kenteken in.';return}
  $('plate').value=plate;
  $('status').textContent='RDW-voertuiggegevens en brandstofgegevens worden opgehaald…';
- const clear=['make','model','first','nlfirst','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear'];
+ const clear=['make','model','first','nlfirst','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear'];
  clear.forEach(id=>$(id).value='');$('rdwsource').value='Bezig…';
  try{
   const mainUrl='https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken='+encodeURIComponent(plate)+'&$limit=1';
@@ -244,11 +256,44 @@ async function lookupRDW(){
    }
   }catch(fuelError){fuelNote='Brandstofdataset niet bereikbaar'}
   $('rdwsource').value='RDW Open Data – basis + brandstof';
-  $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Niet alle voertuigen hebben alle kenmerken geregistreerd; ontbrekende velden blijven leeg.';
+  $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Terugroepacties worden apart gecontroleerd met de knop hieronder.';
+  await lookupRecalls();
  }catch(e){
   $('rdwsource').value='Ophalen mislukt';
   $('status').textContent='RDW ophalen niet gelukt. Controleer internetverbinding of probeer later opnieuw ('+e.message+').';
  }
+}
+async function lookupRecalls(){
+ const plate=cleanPlate(v('plate'));
+ if(!plate){$('recallSummary').textContent='Vul eerst een kenteken in.';return}
+ $('recallSummary').textContent='RDW-terugroepregister wordt geraadpleegd…';$('recallList').innerHTML='';$('recallsData').value='';
+ try{
+  const statusUrl='https://opendata.rdw.nl/resource/t49b-isb7.json? kenteken='+encodeURIComponent(plate)+'&$limit=100';
+  const sr=await fetch(statusUrl.replace('? kenteken=','?kenteken='));
+  if(!sr.ok)throw Error('Statusregister HTTP '+sr.status);
+  const statuses=await sr.json();
+  if(!statuses.length){$('recallSummary').textContent='Geen terugroepacties gevonden voor dit kenteken in het RDW-statusregister.';$('recallsData').value='[]';return}
+  const refs=[...new Set(statuses.map(x=>x.referentiecode_rdw).filter(Boolean))];
+  const detailRows=[];
+  for(const ref of refs){
+   const url='https://opendata.rdw.nl/resource/j9yg-7rg9.json?referentiecode_rdw='+encodeURIComponent(ref)+'&$limit=5';
+   const r=await fetch(url);if(r.ok){const a=await r.json();detailRows.push(...a)}
+  }
+  const riskRows=[];
+  for(const ref of refs){
+   try{const r=await fetch('https://opendata.rdw.nl/resource/9ihi-jgpf.json?referentiecode_rdw='+encodeURIComponent(ref)+'&$limit=10');if(r.ok)riskRows.push(...await r.json())}catch(_){}
+  }
+  const records=statuses.map(st=>{
+   const d=detailRows.find(x=>x.referentiecode_rdw===st.referentiecode_rdw)||{};
+   const risk=riskRows.filter(x=>x.referentiecode_rdw===st.referentiecode_rdw);
+   const open=String(st.code_status||'').toUpperCase()==='O'||String(st.status||'').toLowerCase().includes('openstaand');
+   return {reference:st.referentiecode_rdw||'',status:open?'Openstaand':'Herstel gemeld',producerCode:d.referentiecode_producent||'',producer:d.meldende_producent_distributeur||'',defect:d.omschrijving_defect||'',category:d.categorie_defect||'',consequences:d.materi_le_gevolgen||d.materiele_gevolgen||'',repair:d.beschrijving_van_het_herstel||'',risk:d.risicobeoordeling_rdw||'',riskDetails:risk.map(x=>x.mogelijk_gevaar||x.code_mogelijk_gevaar||'').filter(Boolean).join('; '),remarks:d.opmerkingen_rdw||'',published:d.publicatiedatum_rdw_dt||'',more:d.meer_informatie_op_internet||'',phone:d.meer_informatie_via_telefoonnummer||''};
+  });
+  $('recallsData').value=JSON.stringify(records);
+  const openCount=records.filter(x=>x.status==='Openstaand').length;
+  $('recallSummary').innerHTML='<b>'+openCount+' openstaand(e) van '+records.length+' geregistreerde terugroepactie(s)</b><br>Controle uitgevoerd op '+new Date().toLocaleString('nl-NL')+'.';
+  $('recallList').innerHTML=records.map((x,i)=>'<article class="result" style="margin-top:12px;border-left:5px solid '+(x.status==='Openstaand'?'#c58a00':'#27804b')+'"><h3>Terugroepactie '+(i+1)+' – '+esc(x.status)+'</h3><p><b>RDW-referentie:</b> '+esc(x.reference)+'</p><p><b>Referentiecode producent:</b> '+esc(x.producerCode||'Niet beschikbaar')+'</p><p><b>Producent/distributeur:</b> '+esc(x.producer||'Niet beschikbaar')+'</p><p><b>Categorie defect:</b> '+esc(x.category||'Niet beschikbaar')+'</p><p><b>Omschrijving defect:</b> '+esc(x.defect||'Niet beschikbaar')+'</p><p><b>Materiële gevolgen:</b> '+esc(x.consequences||'Niet beschikbaar')+'</p><p><b>Risico RDW:</b> '+esc(x.risk||x.riskDetails||'Niet beschikbaar')+'</p><p><b>Herstel:</b> '+esc(x.repair||'Niet beschikbaar')+'</p>'+(x.remarks?'<p><b>Opmerkingen RDW:</b> '+esc(x.remarks)+'</p>':'')+(x.more?'<p><a href="'+esc(x.more)+'" target="_blank" rel="noopener">Meer informatie fabrikant</a></p>':'')+(x.phone?'<p><b>Telefoon:</b> '+esc(x.phone)+'</p>':'')+'</article>').join('');
+ }catch(e){$('recallSummary').textContent='Terugroepacties ophalen is niet gelukt ('+e.message+'). Probeer opnieuw of controleer rechtstreeks via de RDW-kentekencheck.'}
 }
 function checkVIN(){const vin=v('vin').toUpperCase();$('vin').value=vin;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){$('status').textContent='Een standaard VIN bestaat uit 17 tekens (zonder I, O en Q). Controleer de invoer.';return}$('status').textContent='VIN-formaat is geldig. Er is geen VIN-database of voertuiggeschiedenis geraadpleegd.'}
 function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
