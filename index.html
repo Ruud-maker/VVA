@@ -195,7 +195,7 @@ function chooseReport(name,price){
  'Btw (21%): '+fmt(price*.21)+'<br><b>Totaal inclusief btw: '+fmt(Number(total))+'</b><br>'+
  'Kenteken: '+(plate?plate.replace(/[&<>"']/g,''):'nog niet ingevuld')+
  '<p class="hint">Dit is een bestelvoorbeeld. De betaling is nog niet geactiveerd. Voor live verkoop moet een Mollie-account worden ingericht en moet de betaling via een beveiligde server worden bevestigd. Zet geen geheime API-sleutel in dit HTML-bestand.</p>'+
- '<button class="secondary" onclick="alert(\\'De betaalmodule is nog niet gekoppeld. Er wordt geen betaling uitgevoerd.\\')">Betaling nog niet beschikbaar</button>';
+ '<button class="secondary" onclick="alert(\'De betaalmodule is nog niet gekoppeld. Er wordt geen betaling uitgevoerd.\')">Betaling nog niet beschikbaar</button>';
 }
 </script>
 
@@ -235,13 +235,13 @@ async function importRDWReport(){
    const content=await page.getTextContent();
    pages.push(content.items.map(x=>x.str).join(' '));
   }
-  const text=pages.join('\\n');
+  const text=pages.join('\n');
   $('rdwReportText').textContent=text;
-  const normalized=text.replace(/\\u00a0/g,' ').replace(/[：]/g,':');
+  const normalized=text.replace(/\u00a0/g,' ').replace(/[：]/g,':');
   // Common RDW presentation: "Geregistreerde eigenaren privé/zakelijk 2 / 0".
-  let match=normalized.match(/(?:geregistreerde\\s+)?eigenaren?\\s*(?:priv[eé]\\s*\\/\\s*zakelijk|particulier\\s*\\/\\s*zakelijk)\\s*[:\\-]?\\s*(\\d+)\\s*\\/\\s*(\\d+)/i);
+  let match=normalized.match(/(?:geregistreerde\s+)?eigenaren?\s*(?:priv[eé]\s*\/\s*zakelijk|particulier\s*\/\s*zakelijk)\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i);
   if(!match){
-   match=normalized.match(/(?:aantal\\s+)?(?:eigenaren|houders)\\s+priv[eé][^\\d]{0,35}(\\d+)[\\s\\S]{0,100}?(?:eigenaren|houders)\\s+zakelijk[^\\d]{0,35}(\\d+)/i);
+   match=normalized.match(/(?:aantal\s+)?(?:eigenaren|houders)\s+priv[eé][^\d]{0,35}(\d+)[\s\S]{0,100}?(?:eigenaren|houders)\s+zakelijk[^\d]{0,35}(\d+)/i);
   }
   if(match){
    $('ownersPrivate').value=match[1];
