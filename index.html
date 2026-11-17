@@ -268,7 +268,7 @@ async function lookupRecalls(){
  if(!plate){$('recallSummary').textContent='Vul eerst een kenteken in.';return}
  $('recallSummary').textContent='RDW-terugroepregister wordt geraadpleegd…';$('recallList').innerHTML='';$('recallsData').value='';
  try{
-  const statusUrl='https://opendata.rdw.nl/resource/t49b-isb7.json? kenteken='+encodeURIComponent(plate)+'&$limit=100';
+  const statusUrl='https://opendata.rdw.nl/resource/bcmj-kjae.json? kenteken='+encodeURIComponent(plate)+'&$limit=100';
   const sr=await fetch(statusUrl.replace('? kenteken=','?kenteken='));
   if(!sr.ok)throw Error('Statusregister HTTP '+sr.status);
   const statuses=await sr.json();
@@ -286,7 +286,7 @@ async function lookupRecalls(){
   const records=statuses.map(st=>{
    const d=detailRows.find(x=>x.referentiecode_rdw===st.referentiecode_rdw)||{};
    const risk=riskRows.filter(x=>x.referentiecode_rdw===st.referentiecode_rdw);
-   const open=String(st.code_status||'').toUpperCase()==='O'||String(st.status||'').toLowerCase().includes('openstaand');
+   const code=String(st.code_status||'').toUpperCase(); const statusText=String(st.status||'').toLowerCase(); const open=code==='O'||statusText.includes('openstaand');
    return {reference:st.referentiecode_rdw||'',status:open?'Openstaand':'Herstel gemeld',producerCode:d.referentiecode_producent||'',producer:d.meldende_producent_distributeur||'',defect:d.omschrijving_defect||'',category:d.categorie_defect||'',consequences:d.materi_le_gevolgen||d.materiele_gevolgen||'',repair:d.beschrijving_van_het_herstel||'',risk:d.risicobeoordeling_rdw||'',riskDetails:risk.map(x=>x.mogelijk_gevaar||x.code_mogelijk_gevaar||'').filter(Boolean).join('; '),remarks:d.opmerkingen_rdw||'',published:d.publicatiedatum_rdw_dt||'',more:d.meer_informatie_op_internet||'',phone:d.meer_informatie_via_telefoonnummer||''};
   });
   $('recallsData').value=JSON.stringify(records);
