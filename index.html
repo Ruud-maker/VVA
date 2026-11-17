@@ -78,8 +78,9 @@ textarea{min-height:75px}
  <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory">
  <label for="vehicleType">Type / uitvoering</label><input id="vehicleType">
  <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date">
- <label for="ownersPrivate">Eigenaren particulier (RDW-rapport)</label><input id="ownersPrivate" type="number" min="0" placeholder="Vul aantal in">
- <label for="ownersBusiness">Eigenaren zakelijk (RDW-rapport)</label><input id="ownersBusiness" type="number" min="0" placeholder="Vul aantal in">
+ <div class="section-subtitle" style="grid-column:1/-1;margin-top:12px;font-weight:700">Eigenaren volgens RDW-Voertuigrapport</div>
+ <label for="ownersPrivate">Eigenaren particulier</label><input id="ownersPrivate" type="number" min="0" step="1" placeholder="Aantal uit RDW-rapport">
+ <label for="ownersBusiness">Eigenaren zakelijk</label><input id="ownersBusiness" type="number" min="0" step="1" placeholder="Aantal uit RDW-rapport">
  <label for="ownersTotal">Totaal aantal eigenaren</label><input id="ownersTotal" type="number" min="0" placeholder="Automatisch berekend" readonly>
  <label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number">
  <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined">
@@ -92,8 +93,15 @@ textarea{min-height:75px}
  <label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement">
  <label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number">
  <label for="rdwsource">RDW-bron / status</label><input id="rdwsource" value="Nog niet opgehaald" readonly>
- </div><p class="hint">Eigenarenaantallen invullen vanaf het RDW-Voertuigrapport. De openbare RDW-Open-Data API levert deze privé/zakelijk-verdeling niet rechtstreeks; VVA verzint deze aantallen dus niet.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
+ </div><p class="hint">Vul de aantallen over uit het officiële RDW-Voertuigrapport. De openbare kenteken-API geeft deze verdeling privé/zakelijk niet vrij; daarom worden deze velden niet automatisch gevuld.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
  <div>
+ <div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
+  <div class="actions"><button onclick="lookupRecalls()">Terugroepacties controleren</button></div>
+  <div id="recallSummary" class="result">Voer eerst een kentekenopvraging uit en controleer daarna de terugroepacties.</div>
+  <div id="recallList" aria-live="polite"></div>
+  <input type="hidden" id="recallsData" value="">
+  <p class="hint">Bron: officiële RDW-datasets Terugroep_actie_status, Terugroep_actie en Terugroep_actie_risico. Status O = openstaand; P = producent heeft herstel gemeld. <a href="https://ovi.rdw.nl/" target="_blank" rel="noopener">Controleer ook in de officiële RDW-kentekencheck</a>.</p>
+ </div></div>
   <div class="panel card"><div class="cardhead">▦ Import & BPM (personenauto)</div><div class="cardbody">
    <div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" type="number" min="0" step=".01" placeholder="€ 0,00"></div>
    <div class="rowfield"><label>BPM (bruto ingevoerd)</label><input id="grossBpm" type="number" min="0" step=".01" placeholder="€ 0,00"></div>
@@ -112,13 +120,6 @@ textarea{min-height:75px}
    <a class="btn secondary" href="#" onclick="market('autoscout24.nl');return false">AutoScout24 ↗</a><a class="btn secondary" href="#" onclick="market('marktplaats.nl');return false">Marktplaats ↗</a><a class="btn secondary" href="#" onclick="market('mobile.de');return false">mobile.de ↗</a>
   </div><p class="hint">Zoeklinks openen vergelijkbare advertenties. Advertentiegegevens worden niet automatisch ingelezen.</p></div></div>
  </div>
- <div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
-  <div class="actions"><button onclick="lookupRecalls()">Terugroepacties controleren</button></div>
-  <div id="recallSummary" class="result">Voer eerst een kentekenopvraging uit en controleer daarna de terugroepacties.</div>
-  <div id="recallList" aria-live="polite"></div>
-  <input type="hidden" id="recallsData" value="">
-  <p class="hint">Bron: RDW Open Data. Status ‘Openstaand’ betekent dat de producent herstel heeft gemeld als nog uit te voeren. Controleer bij twijfel altijd de RDW-kentekencheck of de dealer.</p>
- </div></div>
 </div></section>
 <section id="import" class="tabpane"><div class="columns">
  <div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
@@ -194,7 +195,7 @@ function chooseReport(name,price){
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
 function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):''}
@@ -268,8 +269,8 @@ async function lookupRecalls(){
  if(!plate){$('recallSummary').textContent='Vul eerst een kenteken in.';return}
  $('recallSummary').textContent='RDW-terugroepregister wordt geraadpleegd…';$('recallList').innerHTML='';$('recallsData').value='';
  try{
-  const statusUrl='https://opendata.rdw.nl/resource/bcmj-kjae.json? kenteken='+encodeURIComponent(plate)+'&$limit=100';
-  const sr=await fetch(statusUrl.replace('? kenteken=','?kenteken='));
+  const statusUrl='https://opendata.rdw.nl/resource/t49b-isb7.json?kenteken='+encodeURIComponent(plate)+'&$limit=100';
+  const sr=await fetch(statusUrl);
   if(!sr.ok)throw Error('Statusregister HTTP '+sr.status);
   const statuses=await sr.json();
   if(!statuses.length){$('recallSummary').textContent='Geen terugroepacties gevonden voor dit kenteken in het RDW-statusregister.';$('recallsData').value='[]';return}
@@ -287,7 +288,7 @@ async function lookupRecalls(){
    const d=detailRows.find(x=>x.referentiecode_rdw===st.referentiecode_rdw)||{};
    const risk=riskRows.filter(x=>x.referentiecode_rdw===st.referentiecode_rdw);
    const code=String(st.code_status||'').toUpperCase(); const statusText=String(st.status||'').toLowerCase(); const open=code==='O'||statusText.includes('openstaand');
-   return {reference:st.referentiecode_rdw||'',status:open?'Openstaand':'Herstel gemeld',producerCode:d.referentiecode_producent||'',producer:d.meldende_producent_distributeur||'',defect:d.omschrijving_defect||'',category:d.categorie_defect||'',consequences:d.materi_le_gevolgen||d.materiele_gevolgen||'',repair:d.beschrijving_van_het_herstel||'',risk:d.risicobeoordeling_rdw||'',riskDetails:risk.map(x=>x.mogelijk_gevaar||x.code_mogelijk_gevaar||'').filter(Boolean).join('; '),remarks:d.opmerkingen_rdw||'',published:d.publicatiedatum_rdw_dt||'',more:d.meer_informatie_op_internet||'',phone:d.meer_informatie_via_telefoonnummer||''};
+   return {reference:st.referentiecode_rdw||'',status:open?'Openstaand':'Herstel gemeld',producerCode:d.referentiecode_producent||'',producer:d.meldende_producent_distributeur||'',defect:d.omschrijving_defect||'Detailomschrijving niet beschikbaar in RDW-open data',category:d.categorie_defect||'',consequences:d.materi_le_gevolgen||d.materiele_gevolgen||'',repair:d.beschrijving_van_het_herstel||'',risk:d.risicobeoordeling_rdw||'',riskDetails:risk.map(x=>x.mogelijk_gevaar||x.code_mogelijk_gevaar||'').filter(Boolean).join('; '),remarks:d.opmerkingen_rdw||'',published:d.publicatiedatum_rdw_dt||'',more:d.meer_informatie_op_internet||'',phone:d.meer_informatie_via_telefoonnummer||''};
   });
   $('recallsData').value=JSON.stringify(records);
   const openCount=records.filter(x=>x.status==='Openstaand').length;
