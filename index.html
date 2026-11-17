@@ -63,6 +63,31 @@ textarea{min-height:75px}
  <label for="mass">Massa (rijklaar)</label><input id="mass" type="number" placeholder="– kg"><label for="catalogue">Catalogusprijs (incl. BTW)</label><input id="catalogue" placeholder="€ –">
  <label for="apk">APK-vervaldatum</label><input id="apk" type="date"><label for="co2">CO₂-uitstoot (WLTP)</label><input id="co2" type="number" placeholder="– g/km">
  <label for="emission">Emissieklasse</label><input id="emission"><label for="nlfirst">Datum eerste toelating NL</label><input id="nlfirst" type="date">
+ <label for="seats">Aantal zitplaatsen</label><input id="seats" type="number">
+ <label for="doors">Aantal deuren</label><input id="doors" type="number">
+ <label for="cylinders">Aantal cilinders</label><input id="cylinders" type="number">
+ <label for="displacement">Cilinderinhoud (cm³)</label><input id="displacement" type="number">
+ <label for="massEmpty">Massa ledig voertuig (kg)</label><input id="massEmpty" type="number">
+ <label for="maxMass">Toegestane max. massa (kg)</label><input id="maxMass" type="number">
+ <label for="towBraked">Max. trekgewicht geremd (kg)</label><input id="towBraked" type="number">
+ <label for="towUnbraked">Max. trekgewicht ongeremd (kg)</label><input id="towUnbraked" type="number">
+ <label for="length">Lengte (mm)</label><input id="length" type="number">
+ <label for="width">Breedte (mm)</label><input id="width" type="number">
+ <label for="height">Hoogte (mm)</label><input id="height" type="number">
+ <label for="wheelbase">Wielbasis (mm)</label><input id="wheelbase" type="number">
+ <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory">
+ <label for="vehicleType">Type / uitvoering</label><input id="vehicleType">
+ <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date">
+ <label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number">
+ <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined">
+ <label for="fuelCity">Verbruik stad</label><input id="fuelCity">
+ <label for="fuelOutside">Verbruik buitenweg</label><input id="fuelOutside">
+ <label for="co2Weighted">CO₂-uitstoot gewogen (g/km)</label><input id="co2Weighted">
+ <label for="emissionCode">Emissiecode / norm</label><input id="emissionCode">
+ <label for="electricPower">Elektrisch vermogen (kW)</label><input id="electricPower" type="number">
+ <label for="hybridClass">Hybride voertuigklasse</label><input id="hybridClass">
+ <label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement">
+ <label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number">
  <label for="rdwsource">RDW-bron / status</label><input id="rdwsource" value="Nog niet opgehaald" readonly>
  </div><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
  <div>
@@ -115,11 +140,51 @@ textarea{min-height:75px}
  <p class="hint">Dossiers worden lokaal in deze browser bewaard. Exporteer regelmatig een back-up. De gegevens worden niet naar een server verzonden.</p>
  <div class="actions"><button onclick="saveRecord()">Huidig dossier opslaan</button><button class="secondary" onclick="exportCSV()">CSV export</button><button class="secondary" onclick="exportJSON()">JSON export</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
 </div></div></section>
+
+<section class="panel card" id="rapport-kopen" style="margin-top:16px">
+ <div class="cardhead">VVA Check – Kies uw rapport</div>
+ <div class="cardbody">
+  <p class="hint">Voor autobedrijven en professionele auto-importeurs. Prijzen zijn exclusief 21% btw. De online betaalfunctie wordt pas actief nadat de betaalprovider en zakelijke betaalgegevens zijn gekoppeld.</p>
+  <div class="pricing-grid">
+   <article class="price-card"><h3>Basis</h3><div class="price">€ 7,95 <small>excl. btw</small></div><p>Voertuigoverzicht en beschikbare RDW-gegevens.</p><ul><li>Voertuigkenmerken</li><li>Kentekenregistratiegegevens</li><li>PDF-voertuigoverzicht</li></ul><button onclick="chooseReport('Basis',7.95)">Kies Basis</button></article>
+   <article class="price-card featured"><div class="price-label">Meest gekozen</div><h3>Import</h3><div class="price">€ 14,95 <small>excl. btw</small></div><p>Een praktisch dossier voor de voorbereiding van auto-import.</p><ul><li>Alles uit Basis</li><li>Importkostenindicatie</li><li>BPM-werkberekening</li><li>TARIC en oorsprong vastleggen</li><li>PDF-importdossier</li></ul><button onclick="chooseReport('Import',14.95)">Kies Import</button></article>
+   <article class="price-card"><h3>Compleet</h3><div class="price">€ 24,95 <small>excl. btw</small></div><p>Uitgebreidere documentatie voor het voertuigdossier.</p><ul><li>Alles uit Import</li><li>Marktvergelijkingsnotities</li><li>Uitgebreide dossierdocumentatie</li><li>PDF-rapport en CSV-export</li></ul><button onclick="chooseReport('Compleet',24.95)">Kies Compleet</button></article>
+  </div>
+  <div id="checkout-demo" class="result" aria-live="polite">Selecteer een rapport om de bestelling samen te stellen. Er wordt nog geen betaling uitgevoerd.</div>
+  <div class="actions"><button class="secondary" onclick="window.print()">Voorbeeld rapport afdrukken</button><a class="btn secondary" href="#dossier">Naar dossierbeheer</a></div>
+ </div>
+</section>
+<style>
+.pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.price-card{border:1px solid #bfd3ec;border-radius:14px;padding:15px;background:linear-gradient(#fff,#f4f8ff);position:relative}
+.price-card.featured{border:2px solid #1680d5;box-shadow:0 3px 12px #1677c52a}
+.price-card h3{margin:2px 0 8px;color:#0b2b65;font-size:20px}
+.price{font-size:28px;font-weight:800;color:#0756a5;margin:6px 0}
+.price small{font-size:11px;font-weight:500;color:#586b86}
+.price-card p{min-height:42px;font-size:13px;color:#52647e}
+.price-card ul{padding-left:18px;min-height:112px;font-size:13px;line-height:1.6}
+.price-label{position:absolute;right:10px;top:10px;font-size:10px;font-weight:700;background:#d9f3d5;padding:5px 8px;border-radius:20px}
+@media(max-width:800px){.pricing-grid{grid-template-columns:1fr}.price-card p,.price-card ul{min-height:0}}
+</style>
+<script>
+function chooseReport(name,price){
+ const total=(price*1.21).toFixed(2);
+ const fmt=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
+ const plate=(document.getElementById('plate')?.value||'').trim();
+ document.getElementById('checkout-demo').innerHTML=
+ '<b>Geselecteerd: VVA Check '+name+'</b><br>Rapportprijs: '+fmt(price)+' excl. btw<br>'+
+ 'Btw (21%): '+fmt(price*.21)+'<br><b>Totaal inclusief btw: '+fmt(Number(total))+'</b><br>'+
+ 'Kenteken: '+(plate?plate.replace(/[&<>"']/g,''):'nog niet ingevuld')+
+ '<p class="hint">Dit is een bestelvoorbeeld. De betaling is nog niet geactiveerd. Voor live verkoop moet een Mollie-account worden ingericht en moet de betaling via een beveiligde server worden bevestigd. Zet geen geheime API-sleutel in dit HTML-bestand.</p>'+
+ '<button class="secondary" onclick="alert(\\'De betaalmodule is nog niet gekoppeld. Er wordt geen betaling uitgevoerd.\\')">Betaling nog niet beschikbaar</button>';
+}
+</script>
+
 <section class="panel footer"><div class="actions"><button class="secondary" onclick="window.print()">▤ PDF rapport</button><button class="secondary" onclick="exportCSV()">▦ Excel / CSV export</button><button class="secondary" onclick="exportJSON()">CSV / JSON</button><button class="secondary" onclick="window.print()">▣ Printen</button><button class="secondary" onclick="showTab('dossier',document.querySelectorAll('.tab')[3])">◉ Voorbeeld rapport</button></div><div class="rvg">RVG</div></section>
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','rdwsource','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
@@ -128,13 +193,62 @@ function set(id,value){if(value!==undefined&&value!==null&&value!=='')$(id).valu
 function dateValue(x){if(!x)return '';let s=String(x);if(/^\d{8}$/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);return ''}
 function cleanPlate(x){return x.toUpperCase().replace(/[^A-Z0-9]/g,'')}
 async function lookupRDW(){
- const plate=cleanPlate(v('plate'));if(!plate){$('status').textContent='Vul eerst een kenteken in.';return}
- $('plate').value=plate;$('status').textContent='RDW-gegevens worden opgehaald…';
- const clear=['make','model','first','nlfirst','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission'];clear.forEach(id=>$(id).value='');$('rdwsource').value='Bezig…';
- try{const url='https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken='+encodeURIComponent(plate)+'&$limit=1';const res=await fetch(url);if(!res.ok)throw Error('HTTP '+res.status);const rows=await res.json();if(!rows.length){$('rdwsource').value='Niet gevonden';$('status').textContent='Geen voertuig gevonden voor dit kenteken.';return}
- const d=rows[0],pick=(...keys)=>{for(const k of keys)if(d[k]!==undefined&&d[k]!==null&&d[k]!=='')return d[k];return ''};
- set('make',pick('merk'));set('model',pick('handelsbenaming'));set('first',dateValue(pick('datum_eerste_toelating')));set('nlfirst',dateValue(pick('datum_eerste_toelating_nederland')));set('category',pick('voertuigsoort'));set('body',pick('inrichting'));set('color',pick('eerste_kleur'));set('fuel',pick('brandstof_omschrijving'));set('power',pick('nettomaximumvermogen'));set('mass',pick('massa_rijklaar'));set('apk',dateValue(pick('vervaldatum_apk')));set('co2',pick('co2 uitstoot gecombineerd','co2 uitstoot gecombineerd gewogen'));$('rdwsource').value='RDW Open Data – opgehaald';$('status').textContent='RDW-gegevens opgehaald. Controleer de gegevens en vul ontbrekende kenmerken handmatig aan.';
- }catch(e){$('rdwsource').value='Ophalen mislukt';$('status').textContent='RDW ophalen niet gelukt. Controleer internetverbinding of probeer later opnieuw ('+e.message+').'}
+ const plate=cleanPlate(v('plate'));
+ if(!plate){$('status').textContent='Vul eerst een kenteken in.';return}
+ $('plate').value=plate;
+ $('status').textContent='RDW-voertuiggegevens en brandstofgegevens worden opgehaald…';
+ const clear=['make','model','first','nlfirst','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear'];
+ clear.forEach(id=>$(id).value='');$('rdwsource').value='Bezig…';
+ try{
+  const mainUrl='https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken='+encodeURIComponent(plate)+'&$limit=1';
+  const response=await fetch(mainUrl);if(!response.ok)throw Error('RDW hoofdregister HTTP '+response.status);
+  const rows=await response.json();
+  if(!rows.length){$('rdwsource').value='Niet gevonden';$('status').textContent='Geen voertuig gevonden voor dit kenteken.';return}
+  const d=rows[0],pick=(obj,...keys)=>{for(const k of keys)if(obj&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k];return ''};
+  const setIf=(id,val)=>{if(val!==''&&val!==null&&val!==undefined)set(id,val)};
+  setIf('make',pick(d,'merk'));setIf('model',pick(d,'handelsbenaming'));
+  setIf('first',dateValue(pick(d,'datum_eerste_toelating')));
+  setIf('nlfirst',dateValue(pick(d,'datum_eerste_tenaamstelling_in_nederland')));
+  setIf('category',pick(d,'voertuigsoort'));setIf('body',pick(d,'inrichting'));
+  setIf('color',pick(d,'eerste_kleur'));setIf('mass',pick(d,'massa_rijklaar'));
+  setIf('massEmpty',pick(d,'massa_ledig_voertuig'));setIf('catalogue',pick(d,'catalogusprijs'));
+  setIf('apk',dateValue(pick(d,'vervaldatum_apk')));
+  setIf('seats',pick(d,'aantal_zitplaatsen'));setIf('doors',pick(d,'aantal_deuren'));
+  setIf('cylinders',pick(d,'aantal_cilinders'));setIf('displacement',pick(d,'cilinderinhoud'));
+  setIf('maxMass',pick(d,'toegestane_maximum_massa_voertuig'));
+  setIf('towBraked',pick(d,'maximum_trekken_massa_geremd'));
+  setIf('towUnbraked',pick(d,'maximum_massa_trekken_ongeremd'));
+  setIf('length',pick(d,'lengte'));setIf('width',pick(d,'breedte'));setIf('height',pick(d,'hoogte_voertuig'));
+  setIf('wheelbase',pick(d,'wielbasis'));setIf('euroCategory',pick(d,'europese_voertuigcategorie'));
+  setIf('vehicleType',[pick(d,'type'),pick(d,'uitvoering')].filter(Boolean).join(' / '));
+  setIf('regDate',dateValue(pick(d,'datum_tenaamstelling')));setIf('grossBpmRdw',pick(d,'bruto_bpm'));
+  setIf('odometerJudgement',pick(d,'tellerstandoordeel'));setIf('odometerYear',pick(d,'jaar_laatste_registratie_tellerstand'));
+  let fuelNote='Brandstofdataset niet opgehaald';
+  try{
+   const fuelUrl='https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken='+encodeURIComponent(plate)+'&$limit=10';
+   const fr=await fetch(fuelUrl);
+   if(fr.ok){
+    const fuelRows=await fr.json();
+    if(fuelRows.length){
+     const f=fuelRows[0];
+     setIf('fuel',pick(f,'brandstof_omschrijving'));setIf('power',pick(f,'nettomaximumvermogen'));
+     setIf('electricPower',pick(f,'netto_max_vermogen_elektrisch'));
+     setIf('fuelCombined',pick(f,'brandstofverbruik_gecombineerd'));
+     setIf('fuelCity',pick(f,'brandstofverbruik_stad'));setIf('fuelOutside',pick(f,'brandstofverbruik_buiten'));
+     setIf('co2',pick(f,'co2_uitstoot_gecombineerd','emissie_co2_gecombineerd_wltp'));
+     setIf('co2Weighted',pick(f,'co2_uitstoot_gewogen'));setIf('emission',pick(f,'emissiecode_omschrijving'));
+     setIf('emissionCode',pick(f,'milieuklasse_eg_goedkeuring_licht','milieuklasse_eg_goedkeuring_zwaar'));
+     setIf('hybridClass',pick(f,'klasse_hybride_elektrisch_voertuig'));
+     fuelNote='Brandstof- en emissiedata opgehaald';
+    }
+   }
+  }catch(fuelError){fuelNote='Brandstofdataset niet bereikbaar'}
+  $('rdwsource').value='RDW Open Data – basis + brandstof';
+  $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Niet alle voertuigen hebben alle kenmerken geregistreerd; ontbrekende velden blijven leeg.';
+ }catch(e){
+  $('rdwsource').value='Ophalen mislukt';
+  $('status').textContent='RDW ophalen niet gelukt. Controleer internetverbinding of probeer later opnieuw ('+e.message+').';
+ }
 }
 function checkVIN(){const vin=v('vin').toUpperCase();$('vin').value=vin;if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){$('status').textContent='Een standaard VIN bestaat uit 17 tekens (zonder I, O en Q). Controleer de invoer.';return}$('status').textContent='VIN-formaat is geldig. Er is geen VIN-database of voertuiggeschiedenis geraadpleegd.'}
 function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
