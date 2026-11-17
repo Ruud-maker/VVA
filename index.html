@@ -209,53 +209,71 @@ const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Ma
 
 async function ensurePdfJs(){
  if(window.pdfjsLib) return window.pdfjsLib;
- await new Promise((resolve,reject)=>{
-  const s=document.createElement('script');
-  s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-  s.onload=resolve; s.onerror=()=>reject(new Error('PDF-lezer kon niet worden geladen. Controleer je internetverbinding.'));
-  document.head.appendChild(s);
- });
- if(!window.pdfjsLib) throw new Error('PDF-lezer is niet beschikbaar.');
- window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
- return window.pdfjsLib;
+ const urls=[
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',
+  'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'
+ ];
+ let lastError;
+ for(const url of urls){
+  try{
+   await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=url;
+    s.onload=resolve;
+    s.onerror=()=>{s.remove();reject(new Error('PDF.js niet bereikbaar via '+url))};
+    document.head.appendChild(s);
+   });
+   if(window.pdfjsLib){
+    // Disable the separate worker: this avoids worker/CDN-origin problems in GitHub Pages.
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='';
+    return window.pdfjsLib;
+   }
+  }catch(e){lastError=e}
+ }
+ throw new Error('De PDF-lezer kon niet worden geladen. Open VVA met internet en probeer opnieuw. '+(lastError?.message||''));
 }
 async function importRDWReport(){
  const file=$('rdwReportFile')?.files?.[0];
  const status=$('rdwReportStatus');
  if(!file){status.textContent='Kies eerst het RDW-Voertuigrapport als PDF.';return}
  if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){status.textContent='Dit bestand is geen PDF.';return}
- status.textContent='PDF wordt gelezen…';
+ status.textContent='PDF wordt ingelezen…';
  try{
   const pdfjs=await ensurePdfJs();
   const data=new Uint8Array(await file.arrayBuffer());
-  const pdf=await pdfjs.getDocument({data}).promise;
+  const pdf=await pdfjs.getDocument({data,disableWorker:true,isEvalSupported:false}).promise;
   let pages=[];
   for(let p=1;p<=pdf.numPages;p++){
+   status.textContent='PDF wordt gelezen: pagina '+p+' van '+pdf.numPages+'…';
    const page=await pdf.getPage(p);
    const content=await page.getTextContent();
-   pages.push(content.items.map(x=>x.str).join(' '));
+   // Keep spaces between PDF text fragments so labels and values remain searchable.
+   pages.push(content.items.map(x=>x.str).join(' ').replace(/\s+/g,' '));
   }
   const text=pages.join('\n');
   $('rdwReportText').textContent=text;
-  const normalized=text.replace(/\u00a0/g,' ').replace(/[：]/g,':');
-  // Common RDW presentation: "Geregistreerde eigenaren privé/zakelijk 2 / 0".
-  let match=normalized.match(/(?:geregistreerde\s+)?eigenaren?\s*(?:priv[eé]\s*\/\s*zakelijk|particulier\s*\/\s*zakelijk)\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i);
-  if(!match){
-   match=normalized.match(/(?:aantal\s+)?(?:eigenaren|houders)\s+priv[eé][^\d]{0,35}(\d+)[\s\S]{0,100}?(?:eigenaren|houders)\s+zakelijk[^\d]{0,35}(\d+)/i);
-  }
+  const normalized=text.replace(/\u00a0/g,' ').replace(/[：]/g,':').replace(/\s+/g,' ');
+  const patterns=[
+   /(?:geregistreerde\s+)?eigenaren?\s*(?:priv[eé]\s*\/\s*zakelijk|particulier\s*\/\s*zakelijk)\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i,
+   /(?:priv[eé]|particulier)\s*[:\-]?\s*(\d+)\s*(?:eigenaren?|houders)?\s*[,;\/|]\s*(?:zakelijk|bedrijven?)\s*[:\-]?\s*(\d+)/i,
+   /(?:aantal\s+)?(?:geregistreerde\s+)?eigenaren?[^0-9]{0,60}(\d+)\s*[,;\/|]\s*(\d+)/i,
+   /(?:priv[eé]\s*\/\s*zakelijk)[^0-9]{0,30}(\d+)\s*\/\s*(\d+)/i
+  ];
+  let match=null;
+  for(const pattern of patterns){match=normalized.match(pattern);if(match)break}
   if(match){
    $('ownersPrivate').value=match[1];
    $('ownersBusiness').value=match[2];
    updateOwnerTotal();
-   status.textContent='Gevonden: '+match[1]+' particuliere en '+match[2]+' zakelijke eigenaren. Controleer dit met het originele RDW-rapport en sla daarna het dossier op.';
+   status.textContent='Gevonden: '+match[1]+' particuliere en '+match[2]+' zakelijke eigenaren. Controleer de aantallen met het originele rapport en sla daarna het dossier op.';
   }else{
-   status.textContent='De PDF is gelezen, maar de eigenarenaantallen zijn niet automatisch herkend. Bekijk de gelezen tekst hieronder en vul de aantallen handmatig in. Mogelijk is dit rapport een scan zonder selecteerbare tekst.';
+   status.textContent='De PDF is geopend, maar de aantallen zijn niet automatisch herkend. Controleer of de PDF tekst bevat (geen scan). De uitgelezen tekst staat hieronder; vul de aantallen zo nodig handmatig in.';
   }
  }catch(e){
-  status.textContent='Inlezen is niet gelukt: '+(e?.message||e);
+  status.textContent='PDF inlezen mislukt: '+(e?.message||e)+'. Probeer de PDF opnieuw of controleer of het bestand niet beveiligd is.';
  }
 }
-
 function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):''}
 document.addEventListener('input',e=>{if(e.target&&['ownersPrivate','ownersBusiness'].includes(e.target.id))updateOwnerTotal()});
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
