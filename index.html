@@ -80,21 +80,7 @@ textarea{min-height:75px}
 <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory"/>
 <label for="vehicleType">Type / uitvoering</label><input id="vehicleType"/>
 <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date"/>
-<div class="rdw-owner-display" style="grid-column:1/-1;margin:12px 0 8px;padding:14px 16px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;background:#fff">
-  <div style="font-weight:700;font-size:16px;color:#17234a">Geregistreerde eigenaren privé/zakelijk</div>
-  <div id="ownersPrivateBusinessDisplay" style="font-size:19px;color:#17234a;margin-top:5px">— / —</div>
-  <div class="hint" id="rdwReportStatus" aria-live="polite" style="margin-top:6px">Aantal wordt overgenomen uit het RDW-Voertuigrapport.</div>
-  <details style="margin-top:8px">
-    <summary>RDW-Voertuigrapport inlezen</summary>
-    <p class="hint">Upload het officiële RDW-Voertuigrapport. VVA probeert de aantallen privé/zakelijk uit de PDF-tekst te herkennen. Controleer de uitkomst met het originele rapport.</p>
-    <input accept="application/pdf,.pdf" id="rdwReportFile" style="max-width:100%" type="file"/>
-    <div class="actions"><button class="secondary" onclick="importRDWReport()" type="button">RDW-rapport inlezen</button></div>
-    <details style="margin-top:8px"><summary>Gelezen PDF-tekst bekijken</summary><pre id="rdwReportText" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px"></pre></details>
-  </details>
-</div>
-<input id="ownersPrivate" type="hidden"/>
-<input id="ownersBusiness" type="hidden"/>
-<input id="ownersTotal" type="hidden"/>
+
 
 <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined"/>
 <label for="fuelCity">Verbruik stad</label><input id="fuelCity"/>
@@ -240,7 +226,7 @@ async function importRDWReport(){
   const text=pages.join('\n');
   $('rdwReportText').textContent=text;
   const normalized=text.replace(/\u00a0/g,' ').replace(/[：]/g,':');
-  // Common RDW presentation: "Geregistreerde eigenaren privé/zakelijk 2 / 0".
+  // Common RDW presentation: " 2 / 0".
   let match=normalized.match(/(?:geregistreerde\s+)?eigenaren?\s*(?:priv[eé]\s*\/\s*zakelijk|particulier\s*\/\s*zakelijk)\s*[:\-]?\s*(\d+)\s*\/\s*(\d+)/i);
   if(!match){
    match=normalized.match(/(?:aantal\s+)?(?:eigenaren|houders)\s+priv[eé][^\d]{0,35}(\d+)[\s\S]{0,100}?(?:eigenaren|houders)\s+zakelijk[^\d]{0,35}(\d+)/i);
@@ -249,7 +235,7 @@ async function importRDWReport(){
    $('ownersPrivate').value=match[1];
    $('ownersBusiness').value=match[2];
    const ownerDisplay=$('ownersPrivateBusinessDisplay');
-   if(ownerDisplay) ownerDisplay.textContent=match[1]+' / '+match[2];
+   if(ownerDisplay) ownerDisplay.textContent=match[2];
    updateOwnerTotal();
    status.textContent='Gevonden: '+match[1]+' particuliere en '+match[2]+' zakelijke eigenaren. Controleer dit met het originele RDW-rapport en sla daarna het dossier op.';
   }else{
@@ -260,7 +246,7 @@ async function importRDWReport(){
  }
 }
 
-function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):'';const d=$('ownersPrivateBusinessDisplay');if(d&&(a!==''||b!==''))d.textContent=(a||'0')+' / '+(b||'0')}
+function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):'';const d=$('ownersPrivateBusinessDisplay');if(d&&(a!==''||b!==''))d.textContent=(b||'0')}
 document.addEventListener('input',e=>{if(e.target&&['ownersPrivate','ownersBusiness'].includes(e.target.id))updateOwnerTotal()});
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
 function openOfficialTariff(){
