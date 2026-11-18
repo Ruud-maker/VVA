@@ -42,6 +42,7 @@ textarea{min-height:75px}
 @media(max-width:520px){main{padding:8px}.hero{height:145px;background-size:auto 100%;background-position:center center}.lookupgroup{grid-template-columns:1fr}.lookup{padding:12px}.marketlinks{grid-template-columns:1fr}.footer{align-items:flex-start;flex-direction:column}.rvg{border:0;padding:0}.vehiclegrid{grid-template-columns:1fr 1.1fr}.cardhead{font-size:16px}.tab{padding:11px 5px}}
 @media print{.hero{height:130px}.tabs,.lookup button,.actions,.footer .actions{display:none!important}.tabpane{display:block!important}.columns{grid-template-columns:1fr 1fr}.panel,.card{box-shadow:none;break-inside:avoid}}
 .taric-search-row{display:flex;gap:8px;align-items:stretch}.taric-search-row input{flex:1;min-width:0}.taric-search-button{white-space:nowrap}.taric-transfer{margin:10px 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f4f8ff}.taric-transfer p{margin:0 0 9px}.taric-transfer button{margin-right:8px}.taric-transfer .hint{display:block;margin-top:8px}@media(max-width:620px){.taric-search-row{flex-direction:column}.taric-search-button{width:100%}}
+
 </style></head><body>
 <header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
@@ -51,7 +52,7 @@ textarea{min-height:75px}
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
 <nav class="tabs">
-<button class="tab active" onclick="showTab('vehicle',this)">🚘 Voertuig</button><button class="tab" onclick="showTab('import',this)">▤ Import &amp; BPM</button><button class="tab" onclick="showTab('dossier',this)">▱ Dossierbeheer</button>
+<button class="tab active" onclick="showTab('vehicle',this)">🚘 Voertuig</button><button class="tab" onclick="openImport(this)">▤ Import &amp; BPM 🔒</button><button class="tab" onclick="showTab('dossier',this)">▱ Dossierbeheer</button>
 </nav>
 <section class="tabpane active" id="vehicle"><div class="columns">
 <div class="panel card"><div class="cardhead">🚘 Voertuiggegevens (RDW)</div><div class="cardbody"><div class="vehiclegrid">
@@ -279,6 +280,20 @@ function transferTaricCode(){
  if(status)status.textContent='Code '+code+' is overgenomen in het VVA-dossier. Controleer de omschrijving, oorsprong, het tarief en de maatregelen in het officiële Gebruikstarief.';
 }
 
+async function openImport(btn){
+ // Eenvoudige wachtwoordpoort voor de statische GitHub Pages-versie.
+ if(sessionStorage.getItem('vvaImportUnlocked')==='yes'){showTab('import',btn);return}
+ const entered=window.prompt('Import & BPM is alleen toegankelijk voor de beheerder. Voer het beheerderswachtwoord in:');
+ if(entered===null)return;
+ try{
+  const bytes=new TextEncoder().encode(entered);
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  if(hash==='e57ac1f27fed2fbca1b5dd85737400d3318860f5133526d51658dd5536de984a'){
+   sessionStorage.setItem('vvaImportUnlocked','yes');showTab('import',btn);
+  }else{alert('Onjuist wachtwoord. Import & BPM blijft afgeschermd.');}
+ }catch(e){alert('De wachtwoordcontrole werkt niet in deze browser. Open de website via HTTPS en probeer opnieuw.');}
+}
 function showTab(id,btn){document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');if(btn)btn.classList.add('active')}
 function set(id,value){if(value!==undefined&&value!==null&&value!=='')$(id).value=value}
 function dateValue(x){if(!x)return '';let s=String(x);if(/^\d{8}$/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);return ''}
