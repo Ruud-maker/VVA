@@ -651,14 +651,152 @@ async function getFuelPriceSummary(){
    let price=card.querySelector('.fuel-card-price');
    if(!price){price=document.createElement('div');price.className='fuel-card-price';const links=card.querySelector('.energy-links');if(links)card.insertBefore(price,links);else card.appendChild(price);}
    price.style.cssText='margin:8px 0;font-weight:700;color:#14532d';
-   price.textContent='CBS-landelijk gemiddelde '+label+': '+value+' (geen pompprijs van dit station)';
+   price.textContent='CBS-landelijk gemiddelde '+label+': '+value+' · landelijke indicatie, niet de prijs van dit station';
   });
   box.innerHTML='<b>Landelijk gemiddelde '+label+': '+value+'</b><div class="hint">CBS/Travelcard · meest recente publicatie: '+esc(prices.date||'datum niet beschikbaar')+'. Dit is een landelijk gewogen gemiddelde, geen actuele prijs bij dit afzonderlijke tankstation.</div><a href="https://www.cbs.nl/nl-nl/cijfers/detail/80416ned" target="_blank" rel="noopener">Bron: CBS pompprijzen</a>';
  }catch(e){
   box.innerHTML='<b>Brandstofprijs niet beschikbaar</b><div class="hint">De gratis CBS-prijsfeed kon niet worden opgehaald. De stations blijven zichtbaar, maar er wordt geen prijs geschat.</div><a href="https://www.cbs.nl/nl-nl/cijfers/detail/80416ned" target="_blank" rel="noopener">Bekijk CBS-pompprijzen</a>';
  }
 }
-async function searchEnergyNearby(){clearEnergyResults('Nieuwe locaties en prijzen worden opgehaald…');if(!energyPoint){$('energyStatus').textContent='Kies eerst GPS of zoek een plaats/postcode.';return}updateEnergyVehicleHint();$('energyStatus').textContent='Tankstations en laadpunten in de omgeving worden opgehaald…';$('energyResults').innerHTML='';const f=(v('fuel')||'').toLowerCase(),isElectric=f.includes('elektr')||f.includes('electric');const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';const query='[out:json][timeout:25];(node'+around+'[amenity=fuel];way'+around+'[amenity=fuel];node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';try{const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));if(!r.ok)throw Error('Kaartdatabron antwoordde met HTTP '+r.status);const d=await r.json();const items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name|| (x.tags?.amenity==='fuel'?'Tankstation':'Laadpunt'),type:x.tags?.amenity,lat,lon,tags:x.tags||{},distance:haversineKm(energyPoint,{lat,lon})}}).filter(Boolean).filter(x=>isElectric?x.type==='charging_station':x.type==='fuel').sort((a,b)=>a.distance-b.distance).slice(0,12);if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}$('energyStatus').textContent=items.length+' locaties gevonden binnen 10 km, gesorteerd op afstand (niet op prijs).';const mapSearchUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((isElectric?'laadstations':'tankstations')+' near '+energyPoint.lat+','+energyPoint.lon);$('energyResults').innerHTML='<div style="margin-bottom:6px"><a class="button secondary" href="'+mapSearchUrl+'" target="_blank" rel="noopener">Bekijk alle '+(isElectric?'laadstations':'tankstations')+' in Google Maps</a></div>'+items.map(x=>{const address=[x.tags['addr:street'],x.tags['addr:housenumber']].filter(Boolean).join(' ')+([x.tags['addr:postcode'],x.tags['addr:city']].filter(Boolean).length?', '+[x.tags['addr:postcode'],x.tags['addr:city']].filter(Boolean).join(' '):'');const detail=x.type==='fuel'?['brandstof '+(x.tags.fuel||'niet gespecificeerd'),x.tags.opening_hours].filter(Boolean).join(' · '):['vermogen '+(x.tags.socket||x.tags.capacity||'niet vermeld'),x.tags['operator']].filter(Boolean).join(' · ');const url='https://www.google.com/maps/dir/?api=1&destination='+x.lat+','+x.lon+'&travelmode=driving';const placeUrl='https://www.google.com/maps/search/?api=1&query='+x.lat+','+x.lon;return '<article class="result energy-card '+(x.type==='charging_station'?'charging-card':'fuel-card')+'" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(x.type==='fuel'?'Tankstation':'Laadpunt')+'</div><div>'+esc(address||detail||'Adres niet opgenomen in de openbare kaartgegevens')+'</div><div class="energy-links" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:7px"><a href="'+placeUrl+'" target="_blank" rel="noopener">'+(address?'Bekijk adres in Google Maps':'Adres / exacte locatie in Google Maps')+'</a><a href="'+url+'" target="_blank" rel="noopener">Bekijk route in Google Maps</a></div></article>'}).join('');if(isElectric)await getChargingPriceSummary();else await getFuelPriceSummary()}catch(e){const base='https://www.google.com/maps/search/?api=1&query=';const near=energyPoint.lat+','+energyPoint.lon;const fuelUrl=base+encodeURIComponent('tankstations near '+near);const chargeUrl=base+encodeURIComponent('laadstations near '+near);$('energyStatus').innerHTML='De detailkaart is tijdelijk niet bereikbaar ('+esc(e.message)+'). Je kunt de locaties wel direct in Google Maps bekijken:';$('energyResults').innerHTML='<div class="actions" style="display:flex;gap:8px;flex-wrap:wrap"><a class="button" href="'+fuelUrl+'" target="_blank" rel="noopener">⛽ Tankstations in Google Maps</a><a class="button secondary" href="'+chargeUrl+'" target="_blank" rel="noopener">⚡ Laadpunten in Google Maps</a></div>';if(isElectric)await getChargingPriceSummary();else await getFuelPriceSummary()}}
+
+function ndwValue(props,patterns){
+ const entries=Object.entries(props||{});
+ for(const pattern of patterns){
+  const hit=entries.find(([key,val])=>pattern.test(key)&&val!==null&&val!==undefined&&val!=='');
+  if(hit)return hit[1];
+ }
+ return '';
+}
+function ndwPrice(props){
+ let found=[];
+ const walk=(value,parentKey='')=>{
+  if(!value)return;
+  if(Array.isArray(value)){value.forEach(v=>walk(v,parentKey));return;}
+  if(typeof value==='object'){
+   const type=String(value.type||value.dimension||value.tariff_dimension_type||'').toUpperCase();
+   if(type.includes('ENERGY')||type.includes('KWH')){
+    const price=value.price||value;
+    if(typeof price==='object'){
+     const amount=price.incl_vat??price.inclVat??price.excl_vat??price.exclVat??price.amount;
+     if(Number.isFinite(Number(amount))&&Number(amount)>0)found.push({amount:Number(amount),vat:price.incl_vat!=null||price.inclVat!=null,currency:price.currency||value.currency||'EUR'});
+    }else if(Number.isFinite(Number(price))&&Number(price)>0)found.push({amount:Number(price),vat:false,currency:value.currency||'EUR'});
+   }
+   Object.entries(value).forEach(([k,v])=>walk(v,k));
+  }
+ };
+ walk(props);
+ if(!found.length){
+  const key=Object.keys(props||{}).find(k=>/price.*kwh|kwh.*price|price_per_kwh|tariff_kwh/i.test(k));
+  if(key&&Number.isFinite(Number(props[key]))&&Number(props[key])>0)found.push({amount:Number(props[key]),vat:false,currency:'EUR'});
+ }
+ if(!found.length)return null;
+ found.sort((a,b)=>a.amount-b.amount);
+ return found[0];
+}
+function formatEnergyPrice(p){
+ if(!p)return 'Prijs niet door exploitant aangeleverd';
+ return '€ '+p.amount.toFixed(3).replace('.',',')+' / kWh'+(p.vat?' (incl. btw)':' (excl./btw-status onbekend)');
+}
+async function pdokAddress(lat,lon){
+ try{
+  const url='https://api.pdok.nl/bzk/locatieserver/search/v3_1/reverse?lat='+lat+'&lon='+lon+'&type=adres&rows=1';
+  const r=await fetch(url);if(!r.ok)return '';
+  const d=await r.json(),doc=d.response?.docs?.[0];
+  return doc?.weergavenaam||doc?.straatnaam&&[doc.straatnaam,doc.huisnummer,doc.postcode,doc.woonplaatsnaam].filter(Boolean).join(', ')||'';
+ }catch(e){return ''}
+}
+async function getNdwChargingStations(){
+ const lat=energyPoint.lat,lon=energyPoint.lon;
+ const bbox=[lon-0.14,lat-0.09,lon+0.14,lat+0.09].join(',');
+ const url='https://dotnl.ndw.nu/api/rest/geojson/dynamic-road-status/charge-point-data/v1/features?bbox='+encodeURIComponent(bbox);
+ const r=await fetch(url);if(!r.ok)throw Error('NDW DOT-NL antwoordde met HTTP '+r.status);
+ const data=await r.json();
+ const features=(data.features||[]);
+ const items=features.map(feature=>{
+  const props=feature.properties||{},coords=feature.geometry?.coordinates||[];
+  const x=Number(ndwValue(props,[/^longitude$/i,/^lon$/i,/longitude/i])||coords[0]);
+  const y=Number(ndwValue(props,[/^latitude$/i,/^lat$/i,/latitude/i])||coords[1]);
+  if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const name=ndwValue(props,[/^name$/i,/evse.*name/i,/location.*name/i,/operator.*name/i])||'Openbaar laadpunt';
+  const operator=ndwValue(props,[/^operator$/i,/^provider$/i,/^cpo$/i,/party.*name/i]);
+  const address=ndwValue(props,[/^address$/i,/formatted.*address/i,/^street_address$/i,/^weergavenaam$/i])||
+    [ndwValue(props,[/^street$/i,/street_name/i]),ndwValue(props,[/^house_number$/i,/housenumber/i]),ndwValue(props,[/^postal_code$/i,/postcode/i]),ndwValue(props,[/^city$/i,/^town$/i,/municipality/i])].filter(Boolean).join(', ');
+  const power=ndwValue(props,[/max.*electric.*power/i,/max.*power/i,/power.*kw/i,/^power$/i]);
+  const price=ndwPrice(props);
+  const connectors=ndwValue(props,[/connector.*type/i,/plug.*type/i,/standard/i]);
+  return {name:String(name),operator:String(operator||''),address:String(address||''),lat:y,lon:x,type:'charging_station',tags:props,power,price,connectors,distance:haversineKm(energyPoint,{lat:y,lon:x})};
+ }).filter(x=>x&&x.distance<=10);
+ // Adressen ontbreken soms in de NDW-bron; vul ze gratis aan via PDOK.
+ await Promise.all(items.slice(0,12).map(async item=>{if(!item.address)item.address=await pdokAddress(item.lat,item.lon)}));
+ return items.sort((a,b)=>a.distance-b.distance).slice(0,12);
+}
+async function getOsmFuelStations(){
+ const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';
+ const query='[out:json][timeout:25];(node'+around+'[amenity=fuel];way'+around+'[amenity=fuel];);out center tags;';
+ const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));
+ if(!r.ok)throw Error('OpenStreetMap antwoordde met HTTP '+r.status);
+ const d=await r.json();
+ return (d.elements||[]).map(x=>{
+  const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;
+  return {name:x.tags?.name||x.tags?.brand||'Tankstation',type:'fuel',lat,lon,tags:x.tags||{},distance:haversineKm(energyPoint,{lat,lon})};
+ }).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,12);
+}
+async function searchEnergyNearby(){
+ clearEnergyResults('Nieuwe locaties en prijzen worden opgehaald…');
+ if(!energyPoint){$('energyStatus').textContent='Kies eerst GPS of zoek een plaats/postcode.';return}
+ updateEnergyVehicleHint();
+ $('energyStatus').textContent='Tankstations en laadpunten worden opgehaald…';
+ const fuel=(v('fuel')||'').toLowerCase(),isElectric=fuel.includes('elektr')||fuel.includes('electric');
+ try{
+  let items=[],sourceLabel='';
+  if(isElectric){
+   try{items=await getNdwChargingStations();sourceLabel='NDW DOT-NL';}
+   catch(ndwError){
+    $('energyStatus').textContent='NDW is tijdelijk niet bereikbaar. Als terugval worden OpenStreetMap-laadpunten getoond; deze bevatten niet altijd tarieven.';
+    const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';
+    const query='[out:json][timeout:25];(node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));
+    if(!r.ok)throw ndwError;
+    const d=await r.json();
+    items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name||'Laadpunt',type:'charging_station',lat,lon,tags:x.tags||{},address:[x.tags?.['addr:street'],x.tags?.['addr:housenumber'],x.tags?.['addr:postcode'],x.tags?.['addr:city']].filter(Boolean).join(', '),distance:haversineKm(energyPoint,{lat,lon}),price:null,power:x.tags?.capacity||x.tags?.socket||''};}).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,12);
+    sourceLabel='OpenStreetMap (terugval)';
+   }
+  }else{items=await getOsmFuelStations();sourceLabel='OpenStreetMap';}
+  if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}
+  $('energyStatus').textContent=items.length+' locaties gevonden binnen 10 km · bron: '+sourceLabel+'.';
+  const mapSearchUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((isElectric?'laadstations':'tankstations')+' near '+energyPoint.lat+','+energyPoint.lon);
+  $('energyResults').innerHTML='<div style="margin-bottom:6px"><a class="button secondary" href="'+mapSearchUrl+'" target="_blank" rel="noopener">Bekijk alle '+(isElectric?'laadstations':'tankstations')+' in Google Maps</a></div>'+items.map(x=>{
+   const tags=x.tags||{};
+   const address=x.address||[tags['addr:street'],tags['addr:housenumber']].filter(Boolean).join(' ')+([tags['addr:postcode'],tags['addr:city']].filter(Boolean).length?', '+[tags['addr:postcode'],tags['addr:city']].filter(Boolean).join(' '):'');
+   const details=isElectric?[
+    x.operator||tags.operator?'Exploitant: '+(x.operator||tags.operator):'',
+    x.power?'Vermogen: '+x.power+' kW':(tags.capacity?'Vermogen: '+tags.capacity:'Vermogen niet vermeld'),
+    x.connectors||tags.socket||tags['socket:type2']?'Aansluiting: '+(x.connectors||tags.socket||'Type 2'):''
+   ].filter(Boolean).join(' · '):[
+    tags.brand?'Merk: '+tags.brand:'',
+    tags.fuel?'Brandstoffen: '+tags.fuel:'',
+    tags.opening_hours?'Openingstijden: '+tags.opening_hours:'',
+    tags.automated==='yes'?'Onbemand':''
+   ].filter(Boolean).join(' · ');
+   const url='https://www.google.com/maps/dir/?api=1&destination='+x.lat+','+x.lon+'&travelmode=driving';
+   const placeUrl='https://www.google.com/maps/search/?api=1&query='+x.lat+','+x.lon;
+   const priceMarkup=isElectric?'<div class="charging-card-price" style="margin:8px 0;font-weight:800;color:#14532d">'+formatEnergyPrice(x.price)+'</div>':'';
+   return '<article class="result energy-card '+(isElectric?'charging-card':'fuel-card')+'" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(isElectric?'Laadpunt':'Tankstation')+'</div><div>'+esc(address||'Adres niet beschikbaar in de bron')+'</div><div style="margin-top:6px">'+esc(details||'Aanvullende gegevens niet beschikbaar')+'</div>'+priceMarkup+'<div class="energy-links" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:7px"><a href="'+placeUrl+'" target="_blank" rel="noopener">Adres / locatie in Google Maps</a><a href="'+url+'" target="_blank" rel="noopener">Route in Google Maps</a></div></article>';
+  }).join('');
+  if(isElectric){
+   const withPrice=items.filter(x=>x.price).length;
+   $('chargingPriceSummary').style.display='block';
+   $('chargingPriceSummary').innerHTML='<b>NDW DOT-NL · tarieven per laadpunt</b><div class="hint">'+withPrice+' van '+items.length+' laadpunten hebben een gepubliceerd kWh-tarief. Bij ontbrekende tarieven wordt geen prijs geschat. Tarieven kunnen verschillen per laadpas en kunnen start- of tijdkosten bevatten.</div><a href="https://docs.ndw.nu/data-uitwisseling/interface-beschrijvingen/dafne-api/dafne_api_consumer_pull/" target="_blank" rel="noopener">Bron en technische documentatie NDW</a>';
+  }else await getFuelPriceSummary();
+ }catch(e){
+  $('energyStatus').textContent='De locaties konden niet worden opgehaald ('+e.message+'). Probeer het later opnieuw of open Google Maps.';
+  const base='https://www.google.com/maps/search/?api=1&query=',near=energyPoint.lat+','+energyPoint.lon;
+  const target=isElectric?'laadstations':'tankstations';
+  $('energyResults').innerHTML='<a class="button" href="'+base+encodeURIComponent(target+' near '+near)+'" target="_blank" rel="noopener">Open '+target+' in Google Maps</a>';
+  if(!isElectric)await getFuelPriceSummary();
+ }
+}
+
 
 function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
 function calcBpmFromImport(){const gross=n('bpmGross2'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod');$('grossBpm').value=gross;$('netBpm').value=money(net)}
