@@ -43,7 +43,7 @@ textarea{min-height:75px}
 @media print{.hero{height:130px}.tabs,.lookup button,.actions,.footer .actions{display:none!important}.tabpane{display:block!important}.columns{grid-template-columns:1fr 1fr}.panel,.card{box-shadow:none;break-inside:avoid}}
 .taric-search-row{display:flex;gap:8px;align-items:stretch}.taric-search-row input{flex:1;min-width:0}.taric-search-button{white-space:nowrap}.taric-transfer{margin:10px 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f4f8ff}.taric-transfer p{margin:0 0 9px}.taric-transfer button{margin-right:8px}.taric-transfer .hint{display:block;margin-top:8px}@media(max-width:620px){.taric-search-row{flex-direction:column}.taric-search-button{width:100%}}
 
-.history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)}.history-item b{color:#17376d}.history-item small{display:block;color:#64748b;margin-top:3px}.history-item button{padding:12px 14px;font-size:14px;white-space:normal;min-height:46px;touch-action:manipulation;pointer-events:auto;position:relative;z-index:2}@media(max-width:520px){.history-item{align-items:flex-start;flex-direction:column}.history-item button{width:100%}}
+.history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)}.history-item b{color:#17376d}.history-item small{display:block;color:#64748b;margin-top:3px}.history-item button{padding:12px 14px;font-size:14px;white-space:normal;min-height:46px;touch-action:manipulation;pointer-events:auto;position:relative;z-index:2}@media(max-width:520px){.history-item{align-items:flex-start;flex-direction:column}.history-item button{width:100%}}\n@media(max-width:560px){.vehicle-history-card{align-items:flex-start!important}.vehicle-history-card img,.vehicle-history-card>div:first-child{width:92px!important;flex-basis:92px!important;height:72px!important}.vehicle-history-card>div:last-child{flex:1;min-width:0}.vehicle-history-card button{width:100%;min-height:44px}}
 </style></head><body>
 <header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
@@ -52,16 +52,9 @@ textarea{min-height:75px}
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
-<section class="panel" id="lastVehiclePanel" style="margin:0 0 14px;padding:14px;display:none">
- <div class="cardhead">Laatst opgezochte voertuig</div>
- <div class="cardbody" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-  <img id="lastVehiclePhoto" alt="Foto laatst opgezocht voertuig" style="width:150px;height:95px;object-fit:contain;border-radius:8px;background:#f2f4f7"/>
-  <div><b id="lastVehicleTitle"></b><div class="hint" id="lastVehiclePlate"></div><button type="button" class="secondary" id="restoreLastVehicleButton">Gegevens opnieuw tonen</button></div>
- </div>
-</section>
 <section class="panel" id="vehicleHistoryPanel" style="margin:0 0 14px;padding:14px;display:none">
- <div class="cardhead">🕘 Laatste 5 opgezochte kentekens</div>
- <div class="hint" style="margin:4px 0 10px">Je recente zoekopdrachten blijven op dit apparaat bewaard.</div>
+ <div class="cardhead">🕘 Laatste 5 opgezochte voertuigen</div>
+ <div class="hint" style="margin:4px 0 10px">Je vijf meest recente voertuigen blijven op dit apparaat bewaard.</div>
  <div id="vehicleHistoryList"></div>
 </section>
 
@@ -531,23 +524,29 @@ function saveLastVehicle(){
   localStorage.setItem('vva_last_vehicle',JSON.stringify(data));
   let history=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');
   history=history.filter(x=>isValidDutchHistoryPlate(x.plate));
-  if(data.plate){history=history.filter(x=>String(x.plate).toUpperCase().replace(/[^A-Z0-9]/g,'')!==data.plate);history.unshift({plate:data.plate,make:data.make,model:data.model,year:data.year,savedAt:data.savedAt});}
+  if(data.plate){
+   history=history.filter(x=>String(x.plate).toUpperCase().replace(/[^A-Z0-9]/g,'')!==data.plate);
+   history.unshift({plate:data.plate,make:data.make,model:data.model,year:data.year,photo:data.photo,vin:data.vin,savedAt:data.savedAt});
+  }
   localStorage.setItem('vva_plate_history',JSON.stringify(history.slice(0,5)));
  }catch(e){}
  renderLastVehicle();renderVehicleHistory();
 }
 function renderLastVehicle(){
- try{
-  const d=JSON.parse(localStorage.getItem('vva_last_vehicle')||'null');if(!d)return;
-  $('lastVehiclePanel').style.display='block';
-  $('lastVehicleTitle').textContent=[d.make,d.model,d.year].filter(Boolean).join(' ')||'Voertuig';
-  $('lastVehiclePlate').textContent=d.plate?'Kenteken: '+d.plate:(d.vin?'VIN: '+d.vin:'');
-  if(d.photo){$('lastVehiclePhoto').style.display='block';$('lastVehiclePhoto').src=d.photo;$('vehiclePhotoPanel').style.display='block';$('vehiclePhoto').src=d.photo;$('vehiclePhotoTitle').textContent=[d.make,d.model,d.year].filter(Boolean).join(' ')}else $('lastVehiclePhoto').style.display='none';
- }catch(e){}
+ // De aparte kaart met alleen het laatst opgezochte voertuig is bewust verwijderd.
+ renderVehicleHistory();
 }
 function renderVehicleHistory(){
  const panel=$('vehicleHistoryPanel'),list=$('vehicleHistoryList');if(!panel||!list)return;
- try{let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');a=a.filter(x=>isValidDutchHistoryPlate(x.plate));localStorage.setItem('vva_plate_history',JSON.stringify(a.slice(0,5)));panel.style.display=a.length?'block':'none';list.innerHTML=a.map(x=>'<div class="history-item"><div><b>'+esc(x.plate)+'</b><small>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</small></div><button type="button" class="secondary" data-history-plate="'+esc(x.plate)+'">Kenteken opnieuw opzoeken</button></div>').join('')}catch(e){}
+ try{
+  let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');
+  a=a.filter(x=>isValidDutchHistoryPlate(x.plate)).slice(0,5);
+  localStorage.setItem('vva_plate_history',JSON.stringify(a));
+  panel.style.display=a.length?'block':'none';
+  list.innerHTML=a.map(x=>'<div class="history-item vehicle-history-card" style="display:flex;align-items:center;gap:14px;padding:12px;margin:8px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)">'+
+   (x.photo?'<img src="'+esc(x.photo)+'" alt="Voertuigfoto" style="width:120px;height:76px;object-fit:contain;border-radius:8px;background:#f1f4f8;flex:0 0 120px">':'<div style="width:120px;height:76px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#eef2f7;flex:0 0 120px;font-size:28px">🚘</div>')+
+   '<div style="flex:1;min-width:0"><b>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</b><small style="display:block;color:#64748b;margin:3px 0 8px">Kenteken: '+esc(x.plate)+'</small><button type="button" class="secondary" data-history-plate="'+esc(x.plate)+'">Gegevens opnieuw tonen</button></div></div>').join('');
+ }catch(e){}
 }
 async function loadHistoryPlate(plate){
  const selected=String(plate||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
