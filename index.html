@@ -44,6 +44,14 @@ textarea{min-height:75px}
 .taric-search-row{display:flex;gap:8px;align-items:stretch}.taric-search-row input{flex:1;min-width:0}.taric-search-button{white-space:nowrap}.taric-transfer{margin:10px 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f4f8ff}.taric-transfer p{margin:0 0 9px}.taric-transfer button{margin-right:8px}.taric-transfer .hint{display:block;margin-top:8px}@media(max-width:620px){.taric-search-row{flex-direction:column}.taric-search-button{width:100%}}
 
 .history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)}.history-item b{color:#17376d}.history-item small{display:block;color:#64748b;margin-top:3px}.history-item button{padding:12px 14px;font-size:14px;white-space:normal;min-height:46px;touch-action:manipulation;pointer-events:auto;position:relative;z-index:2}@media(max-width:520px){.history-item{align-items:flex-start;flex-direction:column}.history-item button{width:100%}}\n@media(max-width:560px){.vehicle-history-card{align-items:flex-start!important}.vehicle-history-card img,.vehicle-history-card>div:first-child{width:92px!important;flex-basis:92px!important;height:72px!important}.vehicle-history-card>div:last-child{flex:1;min-width:0}.vehicle-history-card button{width:100%;min-height:44px}}
+
+/* VVA commerciële advertentieruimtes: subtiel en duidelijk herkenbaar */
+.vva-ad-slot{margin:16px 0;padding:14px 16px;border:1px dashed #9bb8d8;border-radius:12px;background:#f7faff;color:#243b5a}
+.vva-ad-slot .ad-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-weight:800;margin-bottom:6px}
+.vva-ad-slot .ad-title{font-weight:800;font-size:16px;margin-bottom:5px}
+.vva-ad-slot p{margin:0;color:#64748b;font-size:13px}
+.vva-ad-slot .ad-tag{display:inline-block;font-size:11px;background:#e8f0fb;border-radius:20px;padding:3px 8px;margin-left:6px}
+@media(max-width:560px){.vva-ad-slot{padding:12px;margin:12px 0}}
 </style></head><body>
 <header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
@@ -75,6 +83,12 @@ textarea{min-height:75px}
   <div id="energyResults" style="display:grid;gap:8px;margin-top:10px"></div>
   <div id="chargingPriceSummary" class="result" style="margin-top:12px;display:none"></div>
   <div id="fuelPriceSummary" class="result" style="margin-top:12px;display:none"></div>
+<div class="vva-ad-slot" id="vvaAdEnergy">
+ <div class="ad-label">Advertentie <span class="ad-tag">Laadpassen &amp; laden</span></div>
+ <div class="ad-title">Vergelijk laadpassen en laadoplossingen</div>
+ <p>Hier kan een aanbieder van laadpassen, laadpalen of energiecontracten een betaald partneraanbod tonen.</p>
+</div>
+
   <p class="hint">Gratis prijsinformatie: laadpaalprijzen via Paalprijs op basis van openbare NDW-gegevens; brandstofprijzen via CBS/Travelcard. CBS publiceert een landelijk gewogen gemiddelde per dag (wekelijks bijgewerkt), geen actuele prijs per afzonderlijk tankstation. Bij laadpunten tonen we de laagste aanbieder-mediaan in de plaats als indicatie; dit is niet het gegarandeerde tarief van die specifieke paal. Tarieven kunnen afwijken van je laadpas of pomp.</p>
  </div>
 </section>
@@ -139,9 +153,21 @@ textarea{min-height:75px}
 <div class="panel card"><div class="cardhead">↗ Marktinformatie (zoek in marktplaatsen)</div><div class="cardbody"><div class="marketlinks">
 <a class="btn secondary" href="#" onclick="market('autoscout24.nl');return false">AutoScout24 ↗</a><a class="btn secondary" href="#" onclick="market('marktplaats.nl');return false">Marktplaats ↗</a><a class="btn secondary" href="#" onclick="market('mobile.de');return false">mobile.de ↗</a>
 </div><p class="hint">Zoeklinks openen vergelijkbare advertenties. Advertentiegegevens worden niet automatisch ingelezen.</p></div></div>
+
+<div class="vva-ad-slot" id="vvaAdVehicle">
+ <div class="ad-label">Advertentie <span class="ad-tag">Autoverkoop &amp; inkoop</span></div>
+ <div class="ad-title">Uw auto verkopen of inruilen?</div>
+ <p>Hier kan een aangesloten autobedrijf of occasionplatform een aanbod tonen. Advertenties worden duidelijk als reclame herkenbaar gemaakt.</p>
+</div>
 </div>
 </div></section>
-<section class="tabpane" id="import"><div class="columns"><p class="hint">Alle gegevens over invoer, goederencode (HS/GN/TARIC), oorsprong, invoerrechten en maatregelen staan hier bij elkaar.</p>
+<section class="tabpane" id="import"><div class="columns">
+<div class="vva-ad-slot" id="vvaAdImport">
+ <div class="ad-label">Advertentie <span class="ad-tag">Auto-import &amp; BPM</span></div>
+ <div class="ad-title">Hulp nodig bij auto-import of BPM?</div>
+ <p>Hier kan een gespecialiseerde importeur, BPM-taxateur of dienstverlener een betaald partneraanbod plaatsen.</p>
+</div>
+<p class="hint">Alle gegevens over invoer, goederencode (HS/GN/TARIC), oorsprong, invoerrechten en maatregelen staan hier bij elkaar.</p>
 <div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
 <div><label>Herkomst</label><select id="importOrigin"><option value="eu">EU</option><option value="non-eu">Buiten EU</option></select></div>
 <div><label>Aankoopprijs (€)</label><input id="importPrice" min="0" step=".01" type="number"/></div>
