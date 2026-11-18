@@ -234,11 +234,12 @@ textarea{min-height:75px}
     <div class="wide"><label for="measures">Maatregelen / opmerkingen</label><textarea id="measures" rows="3" placeholder="Bijv. vergunning, antidumping, documentcode of geen aanvullende maatregel"></textarea></div>
    </div>
    <div class="actions">
-    <button class="secondary" onclick="openOfficialTariff()">🔎 Open Gebruikstarief</button>
-    <a class="btn secondary" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">EU TARIC</a>
+    <button class="secondary" onclick="openOfficialTariff()">🔎 Zoek code in officiële EU-TARIC</button>
+    <a class="btn secondary" href="https://tarief.douane.nl/" rel="noopener" target="_blank">Nederlands Gebruikstarief</a>
     <button onclick="transferTaricCode()">Gegevens vastleggen in dossier</button>
    </div>
-   <div class="result" id="taricTransferStatus">De tariefgegevens worden handmatig gecontroleerd en daarna in dit dossier vastgelegd. VVA haalt geen actuele TARIC-tarieven automatisch op.</div>
+   <div class="result" id="taricTransferStatus">Vul een HS-, GN- of TARIC-code in en open de officiële EU-raadpleging. VVA kopieert de code voor je; controleer daar het actuele recht, de oorsprong en de maatregelen en leg de gecontroleerde uitkomst daarna hier vast.</div>
+   <p class="hint">Bron: Europese Commissie – TARIC. De EU publiceert ook gratis ruwe TARIC-data (Excel). De live raadpleging wordt dagelijks bijgewerkt. VVA haalt de uitkomst niet zelfstandig uit de EU-site; controleer de actuele maatregel en geldigheidsdatum altijd in de officiële bron.</p>
   </div>
  </section>
 </div>
@@ -363,24 +364,43 @@ async function importRDWReport(){
 function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):'';const d=$('ownersPrivateBusinessDisplay');if(d&&(a!==''||b!==''))d.textContent=(b||'0')}
 document.addEventListener('input',e=>{if(e.target&&['ownersPrivate','ownersBusiness'].includes(e.target.id))updateOwnerTotal()});
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
-function openOfficialTariff(){
- const w=window.open('https://tarief.douane.nl/','_blank','noopener');
+async function openOfficialTariff(){
+ const raw=v('taricCode');
+ const code=String(raw||'').replace(/\\D/g,'');
  const status=$('taricTransferStatus');
- if(status)status.textContent=w?'Gebruikstarief geopend. Zoek daar de juiste code, kopieer deze en plak hem in het veld hierboven.':'Het nieuwe tabblad is mogelijk geblokkeerd. Open het Gebruikstarief via de link hieronder.';
+ if(!code || ![6,8,10].includes(code.length)){
+  if(status)status.textContent='Vul eerst een geldige code in: 6 cijfers (HS), 8 cijfers (GN) of 10 cijfers (TARIC). De voorloopnullen blijven behouden.';
+  $('taricCode')?.focus();
+  return;
+ }
+ let copied=false;
+ try{
+  if(navigator.clipboard && window.isSecureContext){await navigator.clipboard.writeText(code);copied=true}
+  else{
+   const helper=document.createElement('textarea');helper.value=code;helper.style.position='fixed';helper.style.opacity='0';document.body.appendChild(helper);helper.select();copied=document.execCommand('copy');helper.remove();
+  }
+ }catch(e){}
+ const url='https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl';
+ const w=window.open(url,'_blank');
+ if(status){
+  status.textContent=(copied?'Code '+code+' is naar het klembord gekopieerd. ':'')+
+   (w?'De officiële EU-TARIC-pagina is geopend. Plak de code in “Goods code”, kies het land van oorsprong en controleer de maatregelen en het recht op de gewenste peildatum.':'Je browser blokkeerde het nieuwe tabblad. Open de officiële EU-TARIC-link hieronder en plak code '+code+'.')+
+   ' Neem de gecontroleerde omschrijving, het recht, eventuele aanvullende code en maatregelen daarna over in VVA.';
+ }
 }
 function transferTaricCode(){
  const raw=v('taricCode');
- const code=raw.replace(/\D/g,'');
+ const code=String(raw||'').replace(/\D/g,'');
  const status=$('taricTransferStatus');
  if(!code || ![6,8,10].includes(code.length)){
   if(status)status.textContent='Controleer de code: gebruik 6 cijfers (HS), 8 cijfers (GN) of 10 cijfers (TARIC).';
   return;
  }
- // Preserve leading zeroes: codes remain strings, never numeric values.
+ // Preserve leading zeroes: tariff codes remain strings, never numeric values.
  set('taricCodeFull',code);set('taricChecked',new Date().toISOString().slice(0,10));
- if(v('dutyRate'))set('importDuty',v('dutyRate'));
  set('taricRate',v('dutyRate'));set('taricDescription',v('goodsDescription'));set('taricMeasures',v('measures'));
- if(status)status.textContent='Tariefgegevens vastgelegd in dit dossier. Controleer code, omschrijving, oorsprong, invoerrecht en maatregelen in het officiële Gebruikstarief.';
+ if(v('dutyRate'))set('importDuty',v('dutyRate'));
+ if(status)status.textContent='De door jou gecontroleerde tariefgegevens zijn in het VVA-dossier vastgelegd. Controleer of de omschrijving, oorsprong, het recht, de aanvullende codes en maatregelen overeenkomen met de officiële EU-TARIC-raadpleging. De datum van vastlegging is '+new Date().toLocaleDateString('nl-NL')+'.';
 }
 
 async function openImport(btn){
