@@ -80,18 +80,21 @@ textarea{min-height:75px}
 <label for="euroCategory">Europese voertuigcategorie</label><input id="euroCategory"/>
 <label for="vehicleType">Type / uitvoering</label><input id="vehicleType"/>
 <label for="regDate">Datum laatste tenaamstelling</label><input id="regDate" type="date"/>
-<div class="section-subtitle" style="grid-column:1/-1;margin-top:12px;font-weight:700">Eigenaren volgens RDW-Voertuigrapport</div>
-<label for="ownersPrivate">Eigenaren particulier</label><input id="ownersPrivate" min="0" placeholder="Aantal uit RDW-rapport" step="1" type="number"/>
-<label for="ownersBusiness">Eigenaren zakelijk</label><input id="ownersBusiness" min="0" placeholder="Aantal uit RDW-rapport" step="1" type="number"/>
-<label for="ownersTotal">Totaal aantal eigenaren</label><input id="ownersTotal" min="0" placeholder="Automatisch berekend" readonly="" type="number"/>
-<div style="grid-column:1/-1;border:1px solid #d5e2f1;border-radius:10px;padding:12px;margin:8px 0">
-<b>RDW-Voertuigrapport inlezen (PDF)</b>
-<p class="hint">Upload het officiële RDW-Voertuigrapport. VVA probeert de aantallen particuliere en zakelijke eigenaren uit de PDF-tekst te herkennen. Controleer de gevonden aantallen altijd met het rapport.</p>
-<input accept="application/pdf,.pdf" id="rdwReportFile" style="max-width:100%" type="file"/>
-<div class="actions"><button class="secondary" onclick="importRDWReport()" type="button">RDW-rapport inlezen</button></div>
-<div aria-live="polite" class="hint" id="rdwReportStatus">Nog geen rapport gekozen.</div>
-<details style="margin-top:8px"><summary>Gelezen PDF-tekst bekijken</summary><pre id="rdwReportText" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px"></pre></details>
+<div class="rdw-owner-display" style="grid-column:1/-1;margin:12px 0 8px;padding:14px 16px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;background:#fff">
+  <div style="font-weight:700;font-size:16px;color:#17234a">Geregistreerde eigenaren privé/zakelijk</div>
+  <div id="ownersPrivateBusinessDisplay" style="font-size:19px;color:#17234a;margin-top:5px">— / —</div>
+  <div class="hint" id="rdwReportStatus" aria-live="polite" style="margin-top:6px">Aantal wordt overgenomen uit het RDW-Voertuigrapport.</div>
+  <details style="margin-top:8px">
+    <summary>RDW-Voertuigrapport inlezen</summary>
+    <p class="hint">Upload het officiële RDW-Voertuigrapport. VVA probeert de aantallen privé/zakelijk uit de PDF-tekst te herkennen. Controleer de uitkomst met het originele rapport.</p>
+    <input accept="application/pdf,.pdf" id="rdwReportFile" style="max-width:100%" type="file"/>
+    <div class="actions"><button class="secondary" onclick="importRDWReport()" type="button">RDW-rapport inlezen</button></div>
+    <details style="margin-top:8px"><summary>Gelezen PDF-tekst bekijken</summary><pre id="rdwReportText" style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:12px"></pre></details>
+  </details>
 </div>
+<input id="ownersPrivate" type="hidden"/>
+<input id="ownersBusiness" type="hidden"/>
+<input id="ownersTotal" type="hidden"/>
 
 <label for="fuelCombined">Verbruik gecombineerd</label><input id="fuelCombined"/>
 <label for="fuelCity">Verbruik stad</label><input id="fuelCity"/>
@@ -245,6 +248,8 @@ async function importRDWReport(){
   if(match){
    $('ownersPrivate').value=match[1];
    $('ownersBusiness').value=match[2];
+   const ownerDisplay=$('ownersPrivateBusinessDisplay');
+   if(ownerDisplay) ownerDisplay.textContent=match[1]+' / '+match[2];
    updateOwnerTotal();
    status.textContent='Gevonden: '+match[1]+' particuliere en '+match[2]+' zakelijke eigenaren. Controleer dit met het originele RDW-rapport en sla daarna het dossier op.';
   }else{
@@ -255,7 +260,7 @@ async function importRDWReport(){
  }
 }
 
-function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):''}
+function updateOwnerTotal(){const a=v('ownersPrivate'),b=v('ownersBusiness');$('ownersTotal').value=(a!==''||b!=='')?(Number(a||0)+Number(b||0)):'';const d=$('ownersPrivateBusinessDisplay');if(d&&(a!==''||b!==''))d.textContent=(a||'0')+' / '+(b||'0')}
 document.addEventListener('input',e=>{if(e.target&&['ownersPrivate','ownersBusiness'].includes(e.target.id))updateOwnerTotal()});
 const money=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
 function openOfficialTariff(){
