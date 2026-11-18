@@ -172,51 +172,93 @@ textarea{min-height:75px}
 </div>
 </div>
 </div></section>
-<section class="tabpane" id="import"><div class="columns">
+<section class="tabpane" id="import">
 <div class="vva-ad-slot" id="vvaAdImport">
  <div class="ad-label">Advertentie <span class="ad-tag">Auto-import &amp; BPM</span></div>
  <div class="ad-title">Hulp nodig bij auto-import of BPM?</div>
  <p>Hier kan een gespecialiseerde importeur, BPM-taxateur of dienstverlener een betaald partneraanbod plaatsen.</p>
 </div>
-<p class="hint">Alle gegevens over invoer, goederencode (HS/GN/TARIC), oorsprong, invoerrechten en maatregelen staan hier bij elkaar.</p>
-<div class="panel card"><div class="cardhead">Importkosten berekenen</div><div class="cardbody"><div class="formgrid">
-<div><label>Herkomst</label><select id="importOrigin"><option value="eu">EU</option><option value="non-eu">Buiten EU</option></select></div>
-<div><label>Aankoopprijs (€)</label><input id="importPrice" min="0" step=".01" type="number"/></div>
-<div><label>Transport tot EU-grens (€)</label><input id="freight" min="0" step=".01" type="number" value="0"/></div>
-<div><label>Invoerrecht (%)</label><input id="importDuty" min="0" step=".01" type="number"/></div>
-<div><label>BTW-tarief (%)</label><input id="vatRate" min="0" step=".01" type="number" value="21"/></div>
-<div><label>Overige kosten (€)</label><input id="otherCosts" min="0" step=".01" type="number" value="0"/></div>
-<div><label>Transport na EU-grens (€)</label><input id="inland" min="0" step=".01" type="number" value="0"/></div>
-<div><label>RDW / keuring (€)</label><input id="rdwCosts" min="0" step=".01" type="number" value="0"/></div>
-</div><div class="actions"><button onclick="calcImport()">Bereken importindicatie</button></div><div class="result" id="importResult">Vul de gegevens in om een indicatie te berekenen.</div>
-<p class="hint">Vereenvoudigde indicatie. Controleer douanewaarde, oorsprong, preferentie, btw-grondslag, bijzondere regelingen en eventuele vrijstellingen afzonderlijk.</p></div></div>
-<div class="panel card"><div class="cardhead">BPM-afschrijving</div><div class="cardbody"><div class="formgrid">
-<div><label>Bruto BPM (€)</label><input id="bpmGross2" min="0" step=".01" type="number"/></div><div><label>Afschrijving (%)</label><input id="depreciation" max="100" min="0" step=".01" type="number"/></div>
-<div class="wide"><label>Methode / onderbouwing</label><select id="bpmMethod"><option>Koerslijst</option><option>Taxatierapport</option><option>Forfaitaire tabel</option><option>Anders / nader te onderbouwen</option></select></div>
-</div><div class="actions"><button onclick="calcBpmFromImport()">Bereken BPM-indicatie</button></div><div class="result" id="bpmDetail">Vul bruto BPM en afschrijving in.</div>
-<p class="hint">VVA stelt niet automatisch het juiste BPM-tarief vast. Controleer tariefjaar, CO₂-meetmethode en toegestane afschrijvingsmethode.</p></div></div>
-<div class="panel card"><div class="cardhead">▦ Import &amp; BPM (personenauto)</div><div class="cardbody">
-<div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
-<div class="rowfield"><label>BPM (bruto ingevoerd)</label><input id="grossBpm" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
-<div class="rowfield"><label>Verschuldigde BPM (indicatief)</label><input id="netBpm" placeholder="€ 0,00"/></div>
-<div class="actions"><button onclick="calcBpm()">▦ Import &amp; BPM berekenen</button></div><div class="result" id="bpmResult">Vul bruto BPM en afschrijving in onder Import &amp; BPM.</div>
-<div class="rowfield"><label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number"/></div></div></div><div class="panel card"><div class="cardhead">🌐 TARIC-code &amp; Oorsprong</div><div class="cardbody">
-<div class="rowfield"><label>Goederencode (HS / GN / TARIC)</label><div class="taric-search-row"><input autocomplete="off" id="taricCode" placeholder="Plak of voer de gekozen code in"/><button aria-label="Open officieel Gebruikstarief" class="secondary taric-search-button" onclick="openOfficialTariff()" title="Zoek in het officiële Gebruikstarief" type="button">🔎 Zoek in Gebruikstarief</button></div></div>
-<div class="taric-transfer"><p><strong>Code gekozen in het Gebruikstarief?</strong> Plak de code hierboven en neem hem met één klik over in het VVA-dossier.</p><button onclick="transferTaricCode()" type="button">Code overnemen in VVA</button><span aria-live="polite" class="hint" id="taricTransferStatus">De officiële tariefpagina opent in een nieuw tabblad.</span></div>
-<div class="rowfield"><label>Officiële goederenomschrijving</label><input id="goodsDescription" placeholder="–"/></div>
-<div class="rowfield"><label>Invoerrecht (EU)</label><input id="dutyRate" placeholder="–" step=".01" type="number"/></div>
-<div class="rowfield"><label>Maatregelen</label><input id="measures" placeholder="–"/></div>
-<div class="rowfield"><label>Oorsprong / Preferentie</label><select id="origin"><option value="">Selecteer</option><option>EU</option><option>Niet-preferentiële oorsprong</option><option>Preferentiële oorsprong</option><option>Onbekend / te controleren</option></select></div>
-<div class="actions"><a class="btn secondary" href="https://tarief.douane.nl/" rel="noopener" target="_blank">↗ Gebruikstarief (Douane)</a><a class="btn secondary" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">EU TARIC ↗</a></div>
-<p class="hint">Let op: het officiële Gebruikstarief is een externe website. De geselecteerde regel kan niet automatisch teruggestuurd worden naar VVA. Controleer de code en plak deze hier; VVA zet hem vervolgens in de dossier- en importvelden. Tariefpercentages en maatregelen worden niet automatisch ingevuld zonder een gevalideerde gegevenskoppeling.</p>
-</div></div><div class="panel card"><div class="cardhead">TARIC-code, oorsprong en maatregelen</div><div class="cardbody"><div class="formgrid">
-<div><label>TARIC-code (10 cijfers)</label><input id="taricCodeFull" maxlength="10" placeholder="8703801000"/></div><div><label>Land van oorsprong</label><input id="originCountry" placeholder="Land van oorsprong"/></div>
-<div class="wide"><label>Officiële goederenomschrijving</label><input id="taricDescription"/></div>
-<div><label>Invoerrecht (%)</label><input id="taricRate" step=".01" type="number"/></div><div><label>Preferentieel bewijs</label><input id="proof" placeholder="Bijv. oorsprongsverklaring / EUR.1"/></div>
-<div><label>Datum tariefcontrole</label><input id="taricChecked" type="date"/></div><div><label>Aanvullende code</label><input id="additionalCode"/></div>
-<div class="wide"><label>Maatregelen en opmerkingen</label><textarea id="taricMeasures"></textarea></div></div>
-<div class="actions"><a class="btn" href="https://tarief.douane.nl/" rel="noopener" target="_blank">Open Gebruikstarief</a><a class="btn" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">Open EU TARIC</a></div>
-</div></div></div></section>
+<p class="hint import-intro">Eén overzicht voor de voorbereiding van de import van een personenauto. Vul alleen de gegevens in die op jouw situatie van toepassing zijn. VVA geeft indicaties; controleer bedragen en voorwaarden altijd bij de officiële instanties of een specialist.</p>
+
+<div class="import-layout">
+ <section class="panel card">
+  <div class="cardhead">1. Herkomst &amp; importkosten</div>
+  <div class="cardbody">
+   <p class="hint">Begin met de herkomst en de kosten. Voor een auto uit de EU is doorgaans geen invoerrecht verschuldigd. Bij invoer van buiten de EU kunnen invoerrecht en invoer-btw van toepassing zijn.</p>
+   <div class="formgrid">
+    <div><label for="importOrigin">Herkomst voertuig</label><select id="importOrigin"><option value="eu">EU</option><option value="non-eu">Buiten EU</option></select></div>
+    <div><label for="importPrice">Aankoopprijs (€)</label><input id="importPrice" min="0" step=".01" type="number" placeholder="0,00"/></div>
+    <div><label for="freight">Transport tot EU-grens (€)</label><input id="freight" min="0" step=".01" type="number" value="0"/></div>
+    <div><label for="importDuty">Invoerrecht (%)</label><input id="importDuty" min="0" step=".01" type="number" placeholder="Controleer TARIC"/></div>
+    <div><label for="vatRate">Invoer-btw (%)</label><input id="vatRate" min="0" step=".01" type="number" value="21"/></div>
+    <div><label for="otherCosts">Overige invoerkosten (€)</label><input id="otherCosts" min="0" step=".01" type="number" value="0"/></div>
+    <div><label for="inland">Transport binnen EU (€)</label><input id="inland" min="0" step=".01" type="number" value="0"/></div>
+    <div><label for="rdwCosts">RDW / keuring (€)</label><input id="rdwCosts" min="0" step=".01" type="number" value="0"/></div>
+   </div>
+   <div class="actions"><button onclick="calcImport()">Bereken importindicatie</button></div>
+   <div class="result" id="importResult">Vul de aankoopprijs en toepasselijke kosten in.</div>
+   <p class="hint">Let op: dit is een vereenvoudigde rekentool en geen officiële douanewaardebepaling. De wettelijke douane- en btw-grondslag kan afwijken. Controleer onder meer transactiewaarde, bijkomende kosten, oorsprong, preferentie, vrijstellingen en bijzondere regelingen.</p>
+  </div>
+ </section>
+
+ <section class="panel card">
+  <div class="cardhead">2. BPM berekenen</div>
+  <div class="cardbody">
+   <p class="hint">Gebruik de bruto BPM en de onderbouwde afschrijving voor een eerste indicatie van de resterende BPM.</p>
+   <div class="formgrid">
+    <div><label for="grossBpm">Bruto BPM (€)</label><input id="grossBpm" min="0" step=".01" type="number" placeholder="0,00"/></div>
+    <div><label for="depreciation">Afschrijving (%)</label><input id="depreciation" min="0" max="100" step=".01" type="number" placeholder="Bijv. 65"/></div>
+    <div class="wide"><label for="bpmMethod">Methode / onderbouwing</label><select id="bpmMethod"><option>Koerslijst</option><option>Taxatierapport</option><option>Forfaitaire tabel</option><option>Anders / nader te onderbouwen</option></select></div>
+    <div><label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number" placeholder="Indien beschikbaar"/></div>
+    <div><label for="netBpm">Resterende BPM (indicatie, €)</label><input id="netBpm" type="text" readonly placeholder="Wordt berekend"/></div>
+   </div>
+   <div class="actions"><button onclick="calcBpmFromImport()">Bereken BPM-indicatie</button></div>
+   <div class="result" id="bpmDetail">Vul bruto BPM en afschrijving in en bereken de indicatie.</div>
+   <p class="hint">De uitkomst is geen BPM-aangifte. Controleer altijd het juiste historische tarief, de CO₂-waarde en meetmethode, datum eerste toelating en de toegestane afschrijvingsmethode. Een taxatierapport moet aan de actuele voorwaarden voldoen.</p>
+  </div>
+ </section>
+
+ <section class="panel card">
+  <div class="cardhead">3. Goederencode, oorsprong &amp; invoerrecht</div>
+  <div class="cardbody">
+   <p class="hint">Leg de gecontroleerde tariefgegevens op één plek vast. Gebruik het officiële Gebruikstarief voor de indeling, het toepasselijke recht en eventuele maatregelen.</p>
+   <div class="formgrid">
+    <div class="wide"><label for="taricCode">Goederencode (HS / GN / TARIC)</label><input autocomplete="off" id="taricCode" placeholder="Plak de gecontroleerde code"/></div>
+    <div><label for="originCountry">Land van oorsprong</label><input id="originCountry" placeholder="Bijv. Japan"/></div>
+    <div><label for="origin">Oorsprong / preferentie</label><select id="origin"><option value="">Selecteer</option><option>EU</option><option>Niet-preferentiële oorsprong</option><option>Preferentiële oorsprong</option><option>Onbekend / te controleren</option></select></div>
+    <div class="wide"><label for="goodsDescription">Officiële goederenomschrijving</label><input id="goodsDescription" placeholder="Omschrijving uit Gebruikstarief"/></div>
+    <div><label for="dutyRate">Invoerrecht (%)</label><input id="dutyRate" min="0" step=".01" type="number" placeholder="Controleer tarief"/></div>
+    <div><label for="proof">Preferentieel bewijs</label><input id="proof" placeholder="Bijv. EUR.1 / oorsprongsverklaring"/></div>
+    <div><label for="taricChecked">Datum tariefcontrole</label><input id="taricChecked" type="date"/></div>
+    <div><label for="additionalCode">Aanvullende code</label><input id="additionalCode" placeholder="Indien van toepassing"/></div>
+    <div class="wide"><label for="measures">Maatregelen / opmerkingen</label><textarea id="measures" rows="3" placeholder="Bijv. vergunning, antidumping, documentcode of geen aanvullende maatregel"></textarea></div>
+   </div>
+   <div class="actions">
+    <button class="secondary" onclick="openOfficialTariff()">🔎 Open Gebruikstarief</button>
+    <a class="btn secondary" href="https://ec.europa.eu/taxation_customs/dds2/taric/taric_consultation.jsp?Lang=nl" rel="noopener" target="_blank">EU TARIC</a>
+    <button onclick="transferTaricCode()">Gegevens vastleggen in dossier</button>
+   </div>
+   <div class="result" id="taricTransferStatus">De tariefgegevens worden handmatig gecontroleerd en daarna in dit dossier vastgelegd. VVA haalt geen actuele TARIC-tarieven automatisch op.</div>
+  </div>
+ </section>
+</div>
+
+<!-- Legacy field IDs retained invisibly so existing dossier/export code remains compatible. -->
+<div hidden aria-hidden="true">
+ <input id="purchase"/><input id="bpmGross2"/><input id="taricCodeFull"/><input id="taricDescription"/>
+ <input id="taricRate"/><input id="taricMeasures"/><input id="taricCheckedLegacy"/>
+</div>
+</section>
+<style>
+.import-intro{margin:4px 0 14px}
+.import-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.import-layout>.panel:last-child{grid-column:1/-1}
+.import-layout .cardhead{font-weight:750}
+.import-layout .hint{line-height:1.5}
+.import-layout .result{margin-top:12px}
+.import-layout textarea{min-height:76px}
+@media(max-width:760px){.import-layout{grid-template-columns:1fr}.import-layout>.panel:last-child{grid-column:auto}}
+</style>
 <section class="tabpane" id="dossier"><div class="panel card"><div class="cardhead">Dossierbeheer &amp; export</div><div class="cardbody">
 <p class="hint">Dossiers worden lokaal in deze browser bewaard. Exporteer regelmatig een back-up. De gegevens worden niet naar een server verzonden.</p>
 <div class="actions"><button onclick="saveRecord()">Huidig dossier opslaan</button><button class="secondary" onclick="exportCSV()">CSV export</button><button class="secondary" onclick="exportJSON()">JSON export</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
@@ -336,11 +378,9 @@ function transferTaricCode(){
  }
  // Preserve leading zeroes: codes remain strings, never numeric values.
  set('taricCodeFull',code);set('taricChecked',new Date().toISOString().slice(0,10));
- if($('importDuty') && v('dutyRate'))set('importDuty',v('dutyRate'));
- if($('taricRate') && v('dutyRate'))set('taricRate',v('dutyRate'));
- if(v('goodsDescription'))set('taricDescription',v('goodsDescription'));
- if(v('measures'))set('taricMeasures',v('measures'));
- if(status)status.textContent='Code '+code+' is overgenomen in het VVA-dossier. Controleer de omschrijving, oorsprong, het tarief en de maatregelen in het officiële Gebruikstarief.';
+ if(v('dutyRate'))set('importDuty',v('dutyRate'));
+ set('taricRate',v('dutyRate'));set('taricDescription',v('goodsDescription'));set('taricMeasures',v('measures'));
+ if(status)status.textContent='Tariefgegevens vastgelegd in dit dossier. Controleer code, omschrijving, oorsprong, invoerrecht en maatregelen in het officiële Gebruikstarief.';
 }
 
 async function openImport(btn){
@@ -835,8 +875,8 @@ async function searchEnergyNearby(){
 }
 
 
-function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
-function calcBpmFromImport(){const gross=n('bpmGross2'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod');$('grossBpm').value=gross;$('netBpm').value=money(net)}
+function calcBpm(){return calcBpmFromImport()}
+function calcBpmFromImport(){const gross=n('grossBpm'),dep=n('depreciation');if(!v('grossBpm')||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod')+'<br><small>Indicatieve berekening; controleer tarief en methode.</small>';}
 function calcImport(){const price=n('importPrice'),freight=n('freight'),rate=n('importDuty'),vatRate=n('vatRate')/100,origin=v('importOrigin');if(!price){alert('Vul aankoopprijs in.');return}const base=price+freight,duty=origin==='non-eu'?base*rate/100:0,vat=origin==='non-eu'?(base+duty+n('otherCosts'))*vatRate:0,total=price+freight+duty+vat+n('otherCosts')+n('inland')+n('rdwCosts');$('importResult').innerHTML='Aankoopprijs: '+money(price)+'<br>Transport tot EU-grens: '+money(freight)+'<br>Indicatief invoerrecht: '+money(duty)+'<br>Indicatieve btw: '+money(vat)+'<br>Overige kosten: '+money(n('otherCosts')+n('inland')+n('rdwCosts'))+'<hr><span class="total">Totaal vóór BPM: '+money(total)+'</span><small>Vereenvoudigde indicatie; controleer de wettelijke douane- en btw-grondslag.</small>'}
 function market(site){const q=[v('make'),v('model'),(v('first')||'').slice(0,4),'occasion'].filter(Boolean).join(' ');if(!q){alert('Vul eerst merk en model in of haal RDW-gegevens op.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(q+' site:'+site),'_blank','noopener')}
 function getData(){let o={};ids.forEach(k=>o[k]=v(k));o.id=currentId||'vva-'+Date.now();o.savedAt=new Date().toISOString();return o}
