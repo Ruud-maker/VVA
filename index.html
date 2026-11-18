@@ -47,7 +47,7 @@ textarea{min-height:75px}
 <main>
 <section class="panel lookup">
 <div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><input autocomplete="off" id="plate" maxlength="8" placeholder="Bijv. XX-123-X"/></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
-<div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-formaat controleren</button></div>
+<div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
 <nav class="tabs">
@@ -374,7 +374,7 @@ async function lookupRecalls(){
   $('recallList').innerHTML=records.map((x,i)=>'<article class="result" style="margin-top:12px;border-left:5px solid '+(x.status==='Openstaand'?'#c58a00':'#27804b')+'"><h3>Terugroepactie '+(i+1)+' – '+esc(x.status)+'</h3><p><b>RDW-referentie:</b> '+esc(x.reference)+'</p><p><b>Referentiecode producent:</b> '+esc(x.producerCode||'Niet beschikbaar')+'</p><p><b>Producent/distributeur:</b> '+esc(x.producer||'Niet beschikbaar')+'</p><p><b>Categorie defect:</b> '+esc(x.category||'Niet beschikbaar')+'</p><p><b>Omschrijving defect:</b> '+esc(x.defect||'Niet beschikbaar')+'</p><p><b>Materiële gevolgen:</b> '+esc(x.consequences||'Niet beschikbaar')+'</p><p><b>Risico RDW:</b> '+esc(x.risk||x.riskDetails||'Niet beschikbaar')+'</p><p><b>Herstel:</b> '+esc(x.repair||'Niet beschikbaar')+'</p>'+(x.remarks?'<p><b>Opmerkingen RDW:</b> '+esc(x.remarks)+'</p>':'')+(x.more?'<p><a href="'+esc(x.more)+'" target="_blank" rel="noopener">Meer informatie fabrikant</a></p>':'')+(x.phone?'<p><b>Telefoon:</b> '+esc(x.phone)+'</p>':'')+'</article>').join('');
  }catch(e){$('recallSummary').textContent='Terugroepacties ophalen is niet gelukt ('+e.message+'). Probeer opnieuw of controleer rechtstreeks via de RDW-kentekencheck.'}
 }
-function checkVIN(){
+async function checkVIN(){
  const vin=String(v('vin')||'').toUpperCase().replace(/[\s-]/g,'');
  $('vin').value=vin;
  const status=$('status');
@@ -382,7 +382,37 @@ function checkVIN(){
  if(vin.length!==17){status.textContent='Ongeldig VIN: een standaard VIN bevat precies 17 tekens. Je hebt '+vin.length+' tekens ingevuld.';return}
  if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){status.textContent='Ongeldig VIN: gebruik alleen letters en cijfers. De letters I, O en Q zijn niet toegestaan.';return}
  if(/^0{3}/.test(vin)){status.textContent='Controleer het VIN: de eerste drie tekens (fabrikantcode/WMI) lijken niet geldig.';return}
- status.textContent='VIN-formaat geldig (17 tekens, toegestane tekens en fabrikantcode gecontroleerd). Let op: dit is alleen een formaatcontrole; er zijn nog geen voertuiggegevens of voertuiggeschiedenis bij een VIN-databank opgehaald.';
+ status.textContent='VIN-database wordt geraadpleegd…';
+ try{
+  const response=await fetch('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/'+encodeURIComponent(vin)+'?format=json');
+  if(!response.ok)throw new Error('VIN-database antwoordde met HTTP '+response.status);
+  const data=await response.json();
+  const x=data.Results&&data.Results[0];
+  if(!x)throw new Error('Geen decodeergegevens ontvangen.');
+  const has=(value)=>value!==undefined&&value!==null&&String(value).trim()!==''&&String(value).trim()!=='Not Applicable';
+  const put=(id,value)=>{if(has(value))set(id,String(value).trim())};
+  put('make',x.Make);
+  put('model',x.Model);
+  put('category',x.VehicleType);
+  put('body',x.BodyClass);
+  put('fuel',x.FuelTypePrimary);
+  put('vehicleType',x.Trim);
+  put('cylinders',x.EngineCylinders);
+  put('displacement',x.DisplacementCC);
+  put('seats',x.NumberOfSeats);
+  put('doors',x.Doors);
+  put('power',x.EngineKW);
+  put('euroCategory',x.VehicleType);
+  const year=has(x.ModelYear)?x.ModelYear:'';
+  const decoded=!!(has(x.Make)||has(x.Model));
+  if(!decoded){
+   status.textContent='De VIN-database heeft dit chassisnummer herkend, maar geen merk of model teruggegeven. Dit komt voor bij sommige Europese voertuigen.';
+   return;
+  }
+  status.textContent='VIN-opvraag voltooid. '+[x.Make,x.Model,year].filter(has).join(' ')+' ingevuld waar beschikbaar. Controleer de gegevens; Europese voertuiggegevens kunnen beperkt zijn.';
+ }catch(error){
+  status.textContent='VIN-opvraag mislukt: '+(error&&error.message?error.message:'verbinding met VIN-database niet beschikbaar')+'. Probeer het later opnieuw of vul de gegevens handmatig in.';
+ }
 }
 function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
 function calcBpmFromImport(){const gross=n('bpmGross2'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod');$('grossBpm').value=gross;$('netBpm').value=money(net)}
