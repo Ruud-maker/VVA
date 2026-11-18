@@ -541,9 +541,23 @@ function renderLastVehicle(){
 }
 function renderVehicleHistory(){
  const panel=$('vehicleHistoryPanel'),list=$('vehicleHistoryList');if(!panel||!list)return;
- try{let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');a=a.filter(x=>isValidDutchHistoryPlate(x.plate));localStorage.setItem('vva_plate_history',JSON.stringify(a.slice(0,5)));panel.style.display=a.length?'block':'none';list.innerHTML=a.map(x=>'<div class="history-item"><div><b>'+esc(x.plate)+'</b><small>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</small></div><button type="button" class="secondary" data-history-plate="'+esc(x.plate)+'" onclick="loadHistoryPlate(\''+esc(x.plate)+'\')">Kenteken opnieuw opzoeken</button></div>').join('')}catch(e){}
+ try{let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');a=a.filter(x=>isValidDutchHistoryPlate(x.plate));localStorage.setItem('vva_plate_history',JSON.stringify(a.slice(0,5)));panel.style.display=a.length?'block':'none';list.innerHTML=a.map(x=>'<div class="history-item"><div><b>'+esc(x.plate)+'</b><small>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</small></div><button type="button" class="secondary" data-history-plate="'+esc(x.plate)+'">Kenteken opnieuw opzoeken</button></div>').join('')}catch(e){}
 }
-function loadHistoryPlate(plate){try{const a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');const x=a.find(item=>item.plate===String(plate||'').toUpperCase());if(!x)return;$('plate').value=x.plate;$('vin').value='';lookupRDW();window.scrollTo({top:0,behavior:'smooth'})}catch(e){}}
+async function loadHistoryPlate(plate){
+ try{
+  const selected=String(plate||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');
+  const x=a.find(item=>String(item.plate||'').toUpperCase().replace(/[^A-Z0-9]/g,'')===selected);
+  if(!x||!isValidDutchHistoryPlate(selected))return;
+  // Vervang de huidige invoer direct; handmatig leegmaken is niet nodig.
+  $('plate').value='';
+  $('vin').value='';
+  $('plate').value=selected;
+  $('plate').dispatchEvent(new Event('input',{bubbles:true}));
+  window.scrollTo({top:0,behavior:'smooth'});
+  await lookupRDW();
+ }catch(e){$('status').textContent='Het bewaarde kenteken kon niet opnieuw worden opgezocht.';}
+}
 async function restoreLastVehicle(){
  try{
   const d=JSON.parse(localStorage.getItem('vva_last_vehicle')||'null');if(!d)return;
@@ -563,7 +577,7 @@ document.addEventListener('click',function(event){
  const restore=event.target.closest('#restoreLastVehicleButton');
  if(restore){event.preventDefault();restoreLastVehicle();return;}
  const historyButton=event.target.closest('[data-history-index]');
- if(historyButton){event.preventDefault();loadHistoryPlate(historyButton.getAttribute('data-history-plate'));}
+ if(historyButton){event.preventDefault();event.stopPropagation();loadHistoryPlate(historyButton.getAttribute('data-history-plate'));}
 });
 document.addEventListener('DOMContentLoaded',function(){
  const b=document.getElementById('restoreLastVehicleButton');
