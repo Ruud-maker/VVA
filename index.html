@@ -52,12 +52,22 @@ textarea{min-height:75px}
 .vva-ad-slot p{margin:0;color:#64748b;font-size:13px}
 .vva-ad-slot .ad-tag{display:inline-block;font-size:11px;background:#e8f0fb;border-radius:20px;padding:3px 8px;margin-left:6px}
 @media(max-width:560px){.vva-ad-slot{padding:12px;margin:12px 0}}
+
+/* Nederlands kenteken: gele plaat met blauwe EU/NL-band */
+.nl-plate{display:flex;align-items:stretch;width:min(100%,390px);height:58px;background:#f7d51d;border:3px solid #171717;border-radius:7px;overflow:hidden;box-shadow:0 2px 3px rgba(0,0,0,.22),inset 0 0 0 1px rgba(255,255,255,.25)}
+.nl-plate-eu{width:39px;flex:0 0 39px;background:#0753a5;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(0,0,0,.28);font-family:Arial,Helvetica,sans-serif}
+.nl-eu-stars{font-size:17px;line-height:18px;color:#ffdf35;text-shadow:0 0 1px #ffdf35}
+.nl-eu-country{font-size:13px;line-height:16px;font-weight:800;letter-spacing:.5px}
+.nl-plate input#plate{flex:1;min-width:0;width:100%;height:100%;margin:0;padding:3px 9px;border:0!important;border-radius:0!important;outline:none!important;background:transparent!important;color:#101010!important;font-family:Arial,Helvetica,sans-serif;font-size:clamp(22px,5vw,31px);font-weight:800;letter-spacing:2px;text-align:center;text-transform:uppercase;box-shadow:none!important}
+.nl-plate input#plate::placeholder{color:rgba(0,0,0,.38);opacity:1;letter-spacing:1.5px}
+.nl-plate:focus-within{outline:3px solid rgba(8,118,207,.25);outline-offset:2px}
+@media(max-width:520px){.nl-plate{height:54px}.nl-plate-eu{width:35px;flex-basis:35px}.nl-plate input#plate{font-size:25px;letter-spacing:1.5px}}
 </style><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8699350008843793" crossorigin="anonymous"></script>
 </head><body>
 <header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
 <section class="panel lookup">
-<div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><input autocomplete="off" id="plate" maxlength="8" placeholder="Bijv. XX-123-X"/></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
+<div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><div class="nl-plate" aria-label="Nederlands geel kenteken"><div class="nl-plate-eu"><span class="nl-eu-stars">✦</span><span class="nl-eu-country">NL</span></div><input autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" id="plate" maxlength="8" placeholder="XX-123-X" aria-label="Vul Nederlands kenteken in"/></div></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
@@ -845,4 +855,15 @@ renderVehicleHistory();
 try{const savedLocation=localStorage.getItem('vva_energy_location');if(savedLocation)$('energyLocation').value=savedLocation;}catch(e){}
 // Vraag automatisch GPS-toestemming zodra de site opent. De browser vraagt toestemming; zonder akkoord blijft handmatige invoer beschikbaar.
 window.addEventListener('load',()=>{setTimeout(()=>{if(!energyPoint&&navigator.geolocation)useMyLocation();},700)});
-</script></body></html>
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+ const plateInput=document.getElementById('plate');
+ if(plateInput) plateInput.addEventListener('input',function(){
+   const start=this.selectionStart, end=this.selectionEnd;
+   this.value=this.value.toUpperCase();
+   try{this.setSelectionRange(start,end)}catch(e){}
+ });
+});
+</script>
+</body></html>
