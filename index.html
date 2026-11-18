@@ -51,13 +51,20 @@ textarea{min-height:75px}
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
+<section class="panel" id="lastVehiclePanel" style="margin:0 0 14px;padding:14px;display:none">
+ <div class="cardhead">Laatst opgezochte voertuig</div>
+ <div class="cardbody" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+  <img id="lastVehiclePhoto" alt="Foto laatst opgezocht voertuig" style="width:150px;height:95px;object-fit:contain;border-radius:8px;background:#f2f4f7"/>
+  <div><b id="lastVehicleTitle"></b><div class="hint" id="lastVehiclePlate"></div><button type="button" class="secondary" onclick="restoreLastVehicle()">Gegevens opnieuw tonen</button></div>
+ </div>
+</section>
 
 <section class="panel" id="energyPanel" style="margin:0 0 14px;padding:16px">
  <div class="cardhead">⛽ Tankstations &amp; laadpunten</div>
  <div class="cardbody">
   <p class="hint">Zoek in de buurt van je huidige GPS-locatie of vul zelf een plaats of postcode in. Het voertuigtype en de brandstof worden uit de voertuiggegevens afgeleid.</p>
   <div class="lookupgroup" style="grid-template-columns:1fr auto;gap:8px">
-   <div><label for="energyLocation">Plaats of postcode</label><input id="energyLocation" placeholder="Bijv. Roosendaal of 4701 AB" autocomplete="postal-code"/></div>
+   <div><label for="energyLocation">Plaats of postcode</label><input id="energyLocation" placeholder="Postcode 1234AB of plaats" autocomplete="postal-code" maxlength="30"/></div>
    <button type="button" onclick="searchEnergyByText()">Zoek locatie</button>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
@@ -325,7 +332,7 @@ function clearVehiclePhoto(){
 }
 async function updateVehiclePhoto(){
  const make=v('make').trim(), model=v('model').trim();
- if(!make||!model){clearVehiclePhoto();return}
+ if(!make||!model){clearVehiclePhoto();saveLastVehicle();return}
  const request=++vehiclePhotoRequest;
  const year=(v('first')||'').slice(0,4);
  const query=[make,model,year,'car'].filter(Boolean).join(' ');
@@ -347,10 +354,10 @@ async function updateVehiclePhoto(){
     return tokens.every(t=>title.includes(t)) && p.imageinfo?.[0]?.thumburl;
   });
   const chosen=candidates[0]||pages.find(p=>p.imageinfo?.[0]?.thumburl);
-  if(!chosen){$('vehiclePhotoNote').textContent='Geen geschikte openbare voertuigfoto gevonden. De voertuiggegevens blijven gewoon beschikbaar.';return}
+  if(!chosen){$('vehiclePhotoNote').textContent='Geen geschikte openbare voertuigfoto gevonden. De voertuiggegevens blijven gewoon beschikbaar.';saveLastVehicle();return}
   img.src=chosen.imageinfo[0].thumburl;
-  img.onload=()=>{if(request===vehiclePhotoRequest)$('vehiclePhotoNote').textContent='Openbare afbeelding via Wikimedia Commons. De foto kan een andere uitvoering of modeljaar tonen.'};
-  img.onerror=()=>{$('vehiclePhotoNote').textContent='De gevonden afbeelding kon niet worden geladen.'};
+  img.onload=()=>{if(request===vehiclePhotoRequest){$('vehiclePhotoNote').textContent='Openbare afbeelding via Wikimedia Commons. De foto kan een andere uitvoering of modeljaar tonen.';saveLastVehicle()}};
+  img.onerror=()=>{$('vehiclePhotoNote').textContent='De gevonden afbeelding kon niet worden geladen.';saveLastVehicle()};
  }catch(e){
   if(request===vehiclePhotoRequest)$('vehiclePhotoNote').textContent='Geen foto beschikbaar; controleer de internetverbinding. De voertuiggegevens zijn wel opgehaald.';
  }
@@ -409,7 +416,7 @@ async function lookupRDW(){
   }catch(fuelError){fuelNote='Brandstofdataset niet bereikbaar'}
   $('rdwsource').value='RDW Open Data – basis + brandstof';
   $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Terugroepacties worden apart gecontroleerd met de knop hieronder.';
-  await updateVehiclePhoto();await lookupRecalls();
+  await updateVehiclePhoto();saveLastVehicle();await lookupRecalls();
  }catch(e){
   $('rdwsource').value='Ophalen mislukt';
   $('status').textContent='RDW ophalen niet gelukt. Controleer internetverbinding of probeer later opnieuw ('+e.message+').';
@@ -482,18 +489,51 @@ async function checkVIN(){
    status.textContent='De VIN-database heeft dit chassisnummer herkend, maar geen merk of model teruggegeven. Dit komt voor bij sommige Europese voertuigen.';
    return;
   }
-  status.textContent='VIN-opvraag voltooid. '+[x.Make,x.Model,year].filter(has).join(' ')+' ingevuld waar beschikbaar. Controleer de gegevens; Europese voertuiggegevens kunnen beperkt zijn.';updateEnergyVehicleHint();await updateVehiclePhoto();
+  status.textContent='VIN-opvraag voltooid. '+[x.Make,x.Model,year].filter(has).join(' ')+' ingevuld waar beschikbaar. Controleer de gegevens; Europese voertuiggegevens kunnen beperkt zijn.';updateEnergyVehicleHint();await updateVehiclePhoto();saveLastVehicle();
  }catch(error){
   status.textContent='VIN-opvraag mislukt: '+(error&&error.message?error.message:'verbinding met VIN-database niet beschikbaar')+'. Probeer het later opnieuw of vul de gegevens handmatig in.';
  }
 }
 
 // Tankstations en laadpunten: locatie via GPS of handmatige plaats/postcode.
+
+function addGoogleMapsLocationButton(){
+ const st=$('energyStatus');
+ let b=$('googleMapsLocationButton');
+ if(!b){b=document.createElement('button');b.id='googleMapsLocationButton';b.type='button';b.className='secondary';b.style.marginTop='8px';b.textContent='Open locatie in Google Maps';b.onclick=()=>{if(energyPoint)window.open('https://www.google.com/maps/search/?api=1&query='+energyPoint.lat+','+energyPoint.lon,'_blank','noopener')};st.insertAdjacentElement('afterend',b)}
+}
+function saveLastVehicle(){
+ const data={plate:v('plate'),vin:v('vin'),make:v('make'),model:v('model'),year:(v('first')||'').slice(0,4),photo:$('vehiclePhoto')?.src||'',savedAt:new Date().toISOString()};
+ if(!data.plate&&!data.vin)return;
+ try{localStorage.setItem('vva_last_vehicle',JSON.stringify(data))}catch(e){}
+ renderLastVehicle();
+}
+function renderLastVehicle(){
+ try{
+  const d=JSON.parse(localStorage.getItem('vva_last_vehicle')||'null');
+  if(!d)return;
+  $('lastVehiclePanel').style.display='block';
+  $('lastVehicleTitle').textContent=[d.make,d.model,d.year].filter(Boolean).join(' ')||'Voertuig';
+  $('lastVehiclePlate').textContent=d.plate?'Kenteken: '+d.plate:(d.vin?'VIN: '+d.vin:'');
+  if(d.photo)$('lastVehiclePhoto').src=d.photo;else $('lastVehiclePhoto').style.display='none';
+ }catch(e){}
+}
+function restoreLastVehicle(){
+ try{
+  const d=JSON.parse(localStorage.getItem('vva_last_vehicle')||'null');if(!d)return;
+  $('plate').value=d.plate||'';$('vin').value=d.vin||'';
+  $('make').value=d.make||'';$('model').value=d.model||'';
+  $('status').textContent='Laatst opgezochte voertuiggegevens lokaal teruggezet. Controleer de gegevens of haal ze opnieuw op bij RDW/VIN.';
+  if(d.photo){$('vehiclePhotoPanel').style.display='block';$('vehiclePhoto').src=d.photo;$('vehiclePhotoTitle').textContent=[d.make,d.model,d.year].filter(Boolean).join(' ')}
+  updateEnergyVehicleHint();
+ }catch(e){}
+}
+
 let energyPoint=null;
 function updateEnergyVehicleHint(){const f=(v('fuel')||'').toLowerCase();const electric= f.includes('elektr')||f.includes('electric');$('energyVehicleHint').textContent='Herkend voertuig: '+[v('make'),v('model')].filter(Boolean).join(' ')+' · Brandstof: '+(v('fuel')||'nog niet bekend')+'. '+(electric?'Laadpunten worden getoond.':'Tankstations worden getoond; bij een plug-in hybride kunnen beide relevant zijn.');}
 function haversineKm(a,b){const r=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return 2*r*Math.asin(Math.sqrt(x));}
-function useMyLocation(){const st=$('energyStatus');if(!navigator.geolocation){st.textContent='GPS wordt door deze browser niet ondersteund.';return}st.textContent='Toestemming voor locatie wordt gevraagd…';navigator.geolocation.getCurrentPosition(pos=>{energyPoint={lat:pos.coords.latitude,lon:pos.coords.longitude};st.textContent='GPS-locatie ontvangen. Zoek nu tankstations of laadpunten.';searchEnergyNearby()},err=>{st.textContent=err.code===1?'Locatietoegang geweigerd. Vul hieronder een plaats of postcode in.':'Locatie kon niet worden bepaald. Vul hieronder een plaats of postcode in.'},{enableHighAccuracy:true,timeout:12000,maximumAge:300000});}
-async function searchEnergyByText(){const q=v('energyLocation').trim();if(!q){$('energyStatus').textContent='Vul een plaats of postcode in.';return}$('energyStatus').textContent='Locatie wordt opgezocht…';try{const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=nl&q='+encodeURIComponent(q);const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw Error('Locatiezoekdienst niet bereikbaar');const a=await r.json();if(!a.length)throw Error('Geen locatie gevonden');energyPoint={lat:Number(a[0].lat),lon:Number(a[0].lon)};$('energyStatus').textContent='Locatie gevonden: '+a[0].display_name;await searchEnergyNearby()}catch(e){$('energyStatus').textContent='Locatie zoeken mislukt: '+e.message;}}
+function useMyLocation(){const st=$('energyStatus');if(!navigator.geolocation){st.textContent='GPS wordt door deze browser niet ondersteund.';return}st.textContent='Toestemming voor locatie wordt gevraagd…';navigator.geolocation.getCurrentPosition(pos=>{energyPoint={lat:pos.coords.latitude,lon:pos.coords.longitude};st.textContent='GPS-locatie ontvangen. Zoek nu tankstations of laadpunten.';addGoogleMapsLocationButton();searchEnergyNearby()},err=>{st.textContent=err.code===1?'Locatietoegang geweigerd. Vul hieronder een plaats of postcode in.':'Locatie kon niet worden bepaald. Vul hieronder een plaats of postcode in.'},{enableHighAccuracy:true,timeout:12000,maximumAge:300000});}
+async function searchEnergyByText(){const q=v('energyLocation').trim();if(!q){$('energyStatus').textContent='Vul een plaats of postcode in.';return}const pc=q.replace(/\\s/g,'').toUpperCase();if(/^\\d/.test(pc)&&!/^\\d{4}[A-Z]{2}$/.test(pc)){$('energyStatus').textContent='Vul een Nederlandse postcode van 6 tekens in, bijvoorbeeld 4701AB (4 cijfers en 2 letters), of een plaatsnaam.';return}$('energyStatus').textContent='Locatie wordt opgezocht…';try{const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=nl&q='+encodeURIComponent(q);const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw Error('Locatiezoekdienst niet bereikbaar');const a=await r.json();if(!a.length)throw Error('Geen locatie gevonden');energyPoint={lat:Number(a[0].lat),lon:Number(a[0].lon)};$('energyStatus').textContent='Locatie gevonden: '+a[0].display_name;addGoogleMapsLocationButton();await searchEnergyNearby()}catch(e){$('energyStatus').textContent='Locatie zoeken mislukt: '+e.message;}}
 
 async function getChargingPriceSummary(){
  const box=$('chargingPriceSummary');box.style.display='none';box.innerHTML='';
@@ -519,14 +559,14 @@ async function getChargingPriceSummary(){
  }
 }
 
-async function searchEnergyNearby(){if(!energyPoint){$('energyStatus').textContent='Kies eerst GPS of zoek een plaats/postcode.';return}updateEnergyVehicleHint();$('energyStatus').textContent='Tankstations en laadpunten in de omgeving worden opgehaald…';$('energyResults').innerHTML='';const f=(v('fuel')||'').toLowerCase(),isElectric=f.includes('elektr')||f.includes('electric');const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';const query='[out:json][timeout:25];(node'+around+'[amenity=fuel];way'+around+'[amenity=fuel];node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';try{const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));if(!r.ok)throw Error('Kaartdatabron antwoordde met HTTP '+r.status);const d=await r.json();const items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name|| (x.tags?.amenity==='fuel'?'Tankstation':'Laadpunt'),type:x.tags?.amenity,lat,lon,tags:x.tags||{},distance:haversineKm(energyPoint,{lat,lon})}}).filter(Boolean).filter(x=>isElectric?x.type==='charging_station':x.type==='fuel').sort((a,b)=>a.distance-b.distance).slice(0,12);if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}$('energyStatus').textContent=items.length+' locaties gevonden binnen 10 km, gesorteerd op afstand (niet op prijs).';$('energyResults').innerHTML=items.map(x=>{const address=[x.tags['addr:street'],x.tags['addr:housenumber'],x.tags['addr:postcode'],x.tags['addr:city']].filter(Boolean).join(' ');const detail=x.type==='fuel'?['brandstof '+(x.tags.fuel||'niet gespecificeerd'),x.tags.opening_hours].filter(Boolean).join(' · '):['vermogen '+(x.tags.socket||x.tags.capacity||'niet vermeld'),x.tags['operator']].filter(Boolean).join(' · ');const url='https://www.openstreetmap.org/?mlat='+x.lat+'&mlon='+x.lon+'#map=17/'+x.lat+'/'+x.lon;return '<article class="result" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(x.type==='fuel'?'Tankstation':'Laadpunt')+'</div><div>'+esc(address||detail||'Details niet beschikbaar')+'</div><a href="'+url+'" target="_blank" rel="noopener">Bekijk op kaart / route</a></article>'}).join('');if(isElectric)await getChargingPriceSummary()}catch(e){$('energyStatus').textContent='Locaties ophalen mislukt: '+e.message+'. Probeer het later opnieuw.'}}
+async function searchEnergyNearby(){if(!energyPoint){$('energyStatus').textContent='Kies eerst GPS of zoek een plaats/postcode.';return}updateEnergyVehicleHint();$('energyStatus').textContent='Tankstations en laadpunten in de omgeving worden opgehaald…';$('energyResults').innerHTML='';const f=(v('fuel')||'').toLowerCase(),isElectric=f.includes('elektr')||f.includes('electric');const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';const query='[out:json][timeout:25];(node'+around+'[amenity=fuel];way'+around+'[amenity=fuel];node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';try{const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));if(!r.ok)throw Error('Kaartdatabron antwoordde met HTTP '+r.status);const d=await r.json();const items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name|| (x.tags?.amenity==='fuel'?'Tankstation':'Laadpunt'),type:x.tags?.amenity,lat,lon,tags:x.tags||{},distance:haversineKm(energyPoint,{lat,lon})}}).filter(Boolean).filter(x=>isElectric?x.type==='charging_station':x.type==='fuel').sort((a,b)=>a.distance-b.distance).slice(0,12);if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}$('energyStatus').textContent=items.length+' locaties gevonden binnen 10 km, gesorteerd op afstand (niet op prijs).';$('energyResults').innerHTML=items.map(x=>{const address=[x.tags['addr:street'],x.tags['addr:housenumber'],x.tags['addr:postcode'],x.tags['addr:city']].filter(Boolean).join(' ');const detail=x.type==='fuel'?['brandstof '+(x.tags.fuel||'niet gespecificeerd'),x.tags.opening_hours].filter(Boolean).join(' · '):['vermogen '+(x.tags.socket||x.tags.capacity||'niet vermeld'),x.tags['operator']].filter(Boolean).join(' · ');const url='https://www.google.com/maps/dir/?api=1&destination='+x.lat+','+x.lon+'&travelmode=driving';return '<article class="result" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(x.type==='fuel'?'Tankstation':'Laadpunt')+'</div><div>'+esc(address||detail||'Details niet beschikbaar')+'</div><a href="'+url+'" target="_blank" rel="noopener">Open route in Google Maps</a></article>'}).join('');if(isElectric)await getChargingPriceSummary()}catch(e){$('energyStatus').textContent='Locaties ophalen mislukt: '+e.message+'. Probeer het later opnieuw.'}}
 
 function calcBpm(){const gross=n('grossBpm'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in op het tabblad Import & BPM.');return}if(dep>100){alert('Afschrijving mag niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmResult').innerHTML='<b>Indicatieve BPM na afschrijving: '+money(net)+'</b><br>Afschrijving: '+money(gross-net)}
 function calcBpmFromImport(){const gross=n('bpmGross2'),dep=n('depreciation');if(!gross||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod');$('grossBpm').value=gross;$('netBpm').value=money(net)}
 function calcImport(){const price=n('importPrice'),freight=n('freight'),rate=n('importDuty'),vatRate=n('vatRate')/100,origin=v('importOrigin');if(!price){alert('Vul aankoopprijs in.');return}const base=price+freight,duty=origin==='non-eu'?base*rate/100:0,vat=origin==='non-eu'?(base+duty+n('otherCosts'))*vatRate:0,total=price+freight+duty+vat+n('otherCosts')+n('inland')+n('rdwCosts');$('importResult').innerHTML='Aankoopprijs: '+money(price)+'<br>Transport tot EU-grens: '+money(freight)+'<br>Indicatief invoerrecht: '+money(duty)+'<br>Indicatieve btw: '+money(vat)+'<br>Overige kosten: '+money(n('otherCosts')+n('inland')+n('rdwCosts'))+'<hr><span class="total">Totaal vóór BPM: '+money(total)+'</span><small>Vereenvoudigde indicatie; controleer de wettelijke douane- en btw-grondslag.</small>'}
 function market(site){const q=[v('make'),v('model'),(v('first')||'').slice(0,4),'occasion'].filter(Boolean).join(' ');if(!q){alert('Vul eerst merk en model in of haal RDW-gegevens op.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(q+' site:'+site),'_blank','noopener')}
 function getData(){let o={};ids.forEach(k=>o[k]=v(k));o.id=currentId||'vva-'+Date.now();o.savedAt=new Date().toISOString();return o}
-function saveRecord(){if(!v('plate')&&!v('vin')){alert('Vul eerst kenteken of VIN in.');return}const d=getData(),i=dossiers.findIndex(x=>x.id===d.id);if(i<0)dossiers.push(d);else dossiers[i]=d;currentId=d.id;localStorage.setItem('vva_check_dossiers',JSON.stringify(dossiers));renderDossiers();$('status').textContent='Dossier lokaal opgeslagen.'}
+function saveRecord(){if(!v('plate')&&!v('vin')){alert('Vul eerst kenteken of VIN in.');return}const d=getData(),i=dossiers.findIndex(x=>x.id===d.id);if(i<0)dossiers.push(d);else dossiers[i]=d;currentId=d.id;localStorage.setItem('vva_check_dossiers',JSON.stringify(dossiers));renderDossiers();renderLastVehicle();$('status').textContent='Dossier lokaal opgeslagen.'}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderDossiers(){$('records').innerHTML=dossiers.length?dossiers.map((d,i)=>'<div class="dossier"><span><b>'+esc(d.plate||d.vin)+' – '+esc((d.make||'')+' '+(d.model||''))+'</b><br><small>'+new Date(d.savedAt).toLocaleString('nl-NL')+'</small></span><span><button class="secondary" onclick="loadDossier('+i+')">Open</button> <button class="secondary" onclick="deleteDossier('+i+')">Verwijder</button></span></div>').join(''):'Nog geen dossiers opgeslagen.'}
 function loadDossier(i){const d=dossiers[i];ids.forEach(k=>set(k,d[k]||''));currentId=d.id;showTab('vehicle',document.querySelector('.tab'))}
