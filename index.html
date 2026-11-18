@@ -43,7 +43,7 @@ textarea{min-height:75px}
 @media print{.hero{height:130px}.tabs,.lookup button,.actions,.footer .actions{display:none!important}.tabpane{display:block!important}.columns{grid-template-columns:1fr 1fr}.panel,.card{box-shadow:none;break-inside:avoid}}
 .taric-search-row{display:flex;gap:8px;align-items:stretch}.taric-search-row input{flex:1;min-width:0}.taric-search-button{white-space:nowrap}.taric-transfer{margin:10px 0 14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#f4f8ff}.taric-transfer p{margin:0 0 9px}.taric-transfer button{margin-right:8px}.taric-transfer .hint{display:block;margin-top:8px}@media(max-width:620px){.taric-search-row{flex-direction:column}.taric-search-button{width:100%}}
 
-.history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)}.history-item b{color:#17376d}.history-item small{display:block;color:#64748b;margin-top:3px}.history-item button{padding:8px 12px;font-size:12px;white-space:nowrap}@media(max-width:520px){.history-item{align-items:flex-start;flex-direction:column}.history-item button{width:100%}}
+.history-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;margin:7px 0;border:1px solid #d7e4f4;border-radius:12px;background:linear-gradient(135deg,#f8fbff,#edf5ff)}.history-item b{color:#17376d}.history-item small{display:block;color:#64748b;margin-top:3px}.history-item button{padding:12px 14px;font-size:14px;white-space:normal;min-height:46px;touch-action:manipulation;pointer-events:auto;position:relative;z-index:2}@media(max-width:520px){.history-item{align-items:flex-start;flex-direction:column}.history-item button{width:100%}}
 </style></head><body>
 <header aria-label="VVA Check met uw Volvo EX30, Hollandse molen en zon" class="hero"></header>
 <main>
@@ -56,7 +56,7 @@ textarea{min-height:75px}
  <div class="cardhead">Laatst opgezochte voertuig</div>
  <div class="cardbody" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
   <img id="lastVehiclePhoto" alt="Foto laatst opgezocht voertuig" style="width:150px;height:95px;object-fit:contain;border-radius:8px;background:#f2f4f7"/>
-  <div><b id="lastVehicleTitle"></b><div class="hint" id="lastVehiclePlate"></div><button type="button" class="secondary" onclick="restoreLastVehicle()">Gegevens opnieuw tonen</button></div>
+  <div><b id="lastVehicleTitle"></b><div class="hint" id="lastVehiclePlate"></div><button type="button" class="secondary" id="restoreLastVehicleButton">Gegevens opnieuw tonen</button></div>
  </div>
 </section>
 <section class="panel" id="vehicleHistoryPanel" style="margin:0 0 14px;padding:14px;display:none">
@@ -133,7 +133,7 @@ textarea{min-height:75px}
 <label for="hybridClass">Hybride voertuigklasse</label><input id="hybridClass"/>
 <label for="odometerJudgement">RDW-tellerstandoordeel</label><input id="odometerJudgement"/>
 <label for="odometerYear">Jaar laatste tellerregistratie</label><input id="odometerYear" type="number"/>
-<label for="rdwsource">RDW-bron / status</label><input id="rdwsource" readonly="" value="Nog niet opgehaald"/>
+<label for="rdwsource">RDW-bron / status</label><input id="rdwsource" value="Nog niet opgehaald"/>
 </div><p class="hint">De openbare RDW-kenteken-API levert deze aantallen niet rechtstreeks. Je kunt ze hierboven proberen in te lezen vanuit het officiële RDW-Voertuigrapport (PDF); controleer de herkenning altijd en sla daarna het dossier op.</p><div class="actions"><button class="secondary" onclick="saveRecord()">Dossier opslaan</button></div></div></div>
 <div>
 <div class="panel card" style="margin-top:18px"><div class="cardhead">⚠️ Terugroepacties (RDW)</div><div class="cardbody">
@@ -168,7 +168,7 @@ textarea{min-height:75px}
 <div class="panel card"><div class="cardhead">▦ Import &amp; BPM (personenauto)</div><div class="cardbody">
 <div class="rowfield"><label>Aankoopwaarde (incl. transport)</label><input id="purchase" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
 <div class="rowfield"><label>BPM (bruto ingevoerd)</label><input id="grossBpm" min="0" placeholder="€ 0,00" step=".01" type="number"/></div>
-<div class="rowfield"><label>Verschuldigde BPM (indicatief)</label><input id="netBpm" placeholder="€ 0,00" readonly=""/></div>
+<div class="rowfield"><label>Verschuldigde BPM (indicatief)</label><input id="netBpm" placeholder="€ 0,00"/></div>
 <div class="actions"><button onclick="calcBpm()">▦ Import &amp; BPM berekenen</button></div><div class="result" id="bpmResult">Vul bruto BPM en afschrijving in onder Import &amp; BPM.</div>
 <div class="rowfield"><label for="grossBpmRdw">Bruto BPM volgens RDW (€)</label><input id="grossBpmRdw" type="number"/></div></div></div><div class="panel card"><div class="cardhead">🌐 TARIC-code &amp; Oorsprong</div><div class="cardbody">
 <div class="rowfield"><label>Goederencode (HS / GN / TARIC)</label><div class="taric-search-row"><input autocomplete="off" id="taricCode" placeholder="Plak of voer de gekozen code in"/><button aria-label="Open officieel Gebruikstarief" class="secondary taric-search-button" onclick="openOfficialTariff()" title="Zoek in het officiële Gebruikstarief" type="button">🔎 Zoek in Gebruikstarief</button></div></div>
@@ -541,7 +541,7 @@ function renderLastVehicle(){
 }
 function renderVehicleHistory(){
  const panel=$('vehicleHistoryPanel'),list=$('vehicleHistoryList');if(!panel||!list)return;
- try{let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');a=a.filter(x=>isValidDutchHistoryPlate(x.plate));localStorage.setItem('vva_plate_history',JSON.stringify(a.slice(0,5)));panel.style.display=a.length?'block':'none';list.innerHTML=a.map((x,i)=>'<div class="history-item"><div><b>'+esc(x.plate)+'</b><small>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</small></div><button type="button" class="secondary" onclick="loadHistoryPlate('+i+')">Kenteken opnieuw opzoeken</button></div>').join('')}catch(e){}
+ try{let a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');a=a.filter(x=>isValidDutchHistoryPlate(x.plate));localStorage.setItem('vva_plate_history',JSON.stringify(a.slice(0,5)));panel.style.display=a.length?'block':'none';list.innerHTML=a.map((x,i)=>'<div class="history-item"><div><b>'+esc(x.plate)+'</b><small>'+esc([x.make,x.model,x.year].filter(Boolean).join(' ')||'Voertuig')+'</small></div><button type="button" class="secondary" data-history-index="'+i+'">Kenteken opnieuw opzoeken</button></div>').join('')}catch(e){}
 }
 function loadHistoryPlate(i){try{const a=JSON.parse(localStorage.getItem('vva_plate_history')||'[]'),x=a[i];if(!x)return;$('plate').value=x.plate;$('vin').value='';lookupRDW();window.scrollTo({top:0,behavior:'smooth'})}catch(e){}}
 async function restoreLastVehicle(){
@@ -558,6 +558,17 @@ async function restoreLastVehicle(){
  }catch(e){$('status').textContent='De bewaarde voertuiggegevens konden niet worden teruggezet. Zoek het kenteken opnieuw op.';}
 }
 
+// Betrouwbare tikbediening op iPhone/iPad voor laatst voertuig en kentekenhistorie.
+document.addEventListener('click',function(event){
+ const restore=event.target.closest('#restoreLastVehicleButton');
+ if(restore){event.preventDefault();restoreLastVehicle();return;}
+ const historyButton=event.target.closest('[data-history-index]');
+ if(historyButton){event.preventDefault();const index=Number(historyButton.getAttribute('data-history-index'));if(Number.isInteger(index))loadHistoryPlate(index);}
+});
+document.addEventListener('DOMContentLoaded',function(){
+ const b=document.getElementById('restoreLastVehicleButton');
+ if(b){b.style.minHeight='48px';b.style.touchAction='manipulation';b.style.pointerEvents='auto';}
+});
 let energyPoint=null;
 function updateEnergyVehicleHint(){const f=(v('fuel')||'').toLowerCase();const electric= f.includes('elektr')||f.includes('electric');$('energyVehicleHint').textContent='Herkend voertuig: '+[v('make'),v('model')].filter(Boolean).join(' ')+' · Brandstof: '+(v('fuel')||'nog niet bekend')+'. '+(electric?'Laadpunten worden getoond.':'Tankstations worden getoond; bij een plug-in hybride kunnen beide relevant zijn.');}
 function haversineKm(a,b){const r=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return 2*r*Math.asin(Math.sqrt(x));}
