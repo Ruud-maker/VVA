@@ -90,10 +90,8 @@ textarea{min-height:75px}
    <button type="button" class="secondary" onclick="searchEnergyNearby()">Zoek tankstations / laadpunten</button>
   </div>
   <div class="result" style="margin:10px 0;padding:12px">
-   <label for="googleMapsKey">Google Maps API-sleutel (eenmalig instellen op dit apparaat)</label>
-   <input id="googleMapsKey" type="password" autocomplete="off" placeholder="Plak hier je nieuwe, beveiligde API-sleutel"/>
-   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="secondary" onclick="saveGoogleMapsKey()">Sleutel lokaal bewaren</button><button type="button" class="secondary" onclick="clearGoogleMapsKey()">Sleutel wissen</button></div>
-   <small class="hint">De sleutel wordt alleen in de lokale opslag van deze browser bewaard en niet in dit HTML-bestand of GitHub gezet. Gebruik alleen de sleutel met website- en API-beperkingen. Deze browser-sleutel blijft zichtbaar voor bezoekers; de ingestelde domein- en API-beperkingen zijn daarom essentieel.</small>
+   <b>Google Maps-laadpunten</b>
+   <small class="hint">Google Maps wordt automatisch geladen voor alle bezoekers. Locatietoestemming is alleen nodig voor zoeken via GPS.</small>
   </div>
   <div id="energyMap" style="display:none;width:100%;height:320px;border-radius:12px;overflow:hidden;margin:10px 0" aria-label="Kaart met laadpunten"></div>
   <div id="energyVehicleHint" class="hint">Voer eerst een kenteken of VIN in om brandstof en voertuigtype te herkennen.</div>
@@ -702,12 +700,12 @@ function clearEnergyResults(message){
 let energyPoint=null;
 function updateEnergyVehicleHint(){const f=(v('fuel')||'').toLowerCase();const electric= f.includes('elektr')||f.includes('electric');$('energyVehicleHint').textContent='Herkend voertuig: '+[v('make'),v('model')].filter(Boolean).join(' ')+' · Brandstof: '+(v('fuel')||'nog niet bekend')+'. '+(electric?'Laadpunten worden getoond.':'Tankstations worden getoond; bij een plug-in hybride kunnen beide relevant zijn.');}
 function haversineKm(a,b){const r=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return 2*r*Math.asin(Math.sqrt(x));}
+// VVA CHECK GOOGLE MAPS: vervang de tekst hieronder door de nieuwe, domein- en API-beperkte browser-API-sleutel.
+const VVA_GOOGLE_MAPS_API_KEY='PLAK_HIER_JE_GOOGLE_MAPS_API_SLEUTEL';
 let googleMapsLoaderPromise=null;
-function saveGoogleMapsKey(){const key=($('googleMapsKey')?.value||'').trim();if(!key){alert('Plak eerst je nieuwe Google Maps API-sleutel.');return}try{localStorage.setItem('vva_google_maps_key',key);$('googleMapsKey').value='';$('energyStatus').textContent='Google Maps-sleutel lokaal opgeslagen in deze browser.';}catch(e){alert('Opslaan in deze browser is niet gelukt.');}}
-function clearGoogleMapsKey(){try{localStorage.removeItem('vva_google_maps_key')}catch(e){}if($('googleMapsKey'))$('googleMapsKey').value='';$('energyStatus').textContent='Google Maps-sleutel uit deze browser verwijderd.';}
-function getGoogleMapsKey(){try{return localStorage.getItem('vva_google_maps_key')||''}catch(e){return ''}}
+function getGoogleMapsKey(){return VVA_GOOGLE_MAPS_API_KEY.startsWith('AIza')?VVA_GOOGLE_MAPS_API_KEY:'';}
 function loadGoogleMaps(){
- const key=getGoogleMapsKey();if(!key)return Promise.reject(new Error('Geen Google Maps API-sleutel ingesteld. Plak eerst je nieuwe sleutel in het veld hierboven.'));
+ const key=getGoogleMapsKey();if(!key)return Promise.reject(new Error('Google Maps is nog niet geconfigureerd. Vul de beperkte API-sleutel in de VVA_GOOGLE_MAPS_API_KEY-instelling in het index.html-bestand in.'));
  if(window.google?.maps?.importLibrary)return Promise.resolve(window.google.maps);
  if(googleMapsLoaderPromise)return googleMapsLoaderPromise;
  googleMapsLoaderPromise=new Promise((resolve,reject)=>{
