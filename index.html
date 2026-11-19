@@ -703,7 +703,7 @@ function haversineKm(a,b){const r=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lo
 // VVA CHECK GOOGLE MAPS: vervang de tekst hieronder door de nieuwe, domein- en API-beperkte browser-API-sleutel.
 const VVA_GOOGLE_MAPS_API_KEY='PLAK_HIER_JE_GOOGLE_MAPS_API_SLEUTEL';
 let googleMapsLoaderPromise=null;
-function getGoogleMapsKey(){return AIzaSyAEA0QM-Itha6O57Z8G8KGMqHgob9Za6Q4startsWith('AIza')?VVA_GOOGLE_MAPS_API_KEY:'';}
+function getGoogleMapsKey(){return VVA_GOOGLE_MAPS_API_KEY.startsWith('AIza')?VVA_GOOGLE_MAPS_API_KEY:'';}
 function loadGoogleMaps(){
  const key=getGoogleMapsKey();if(!key)return Promise.reject(new Error('Google Maps is nog niet geconfigureerd. Vul de beperkte API-sleutel in de VVA_GOOGLE_MAPS_API_KEY-instelling in het index.html-bestand in.'));
  if(window.google?.maps?.importLibrary)return Promise.resolve(window.google.maps);
