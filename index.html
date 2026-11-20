@@ -486,15 +486,17 @@ async function lookupRDW(){
    }finally{clearTimeout(timer);}
   }catch(primaryError){
    $('status').textContent='Rechtstreekse RDW-verbinding niet beschikbaar; tweede openbare gegevensroute wordt geprobeerd…';
-   const backupUrl='https://api.data.amsterdam.nl/v1/rdw/v1/voertuig/?kenteken='+encodeURIComponent(plate);
+   const backupUrl='https://api.data.amsterdam.nl/v1/rdw/v1/voertuig/?_format=json&kenteken='+encodeURIComponent(plate);
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
    try{
-    const backupResponse=await fetch(backupUrl,{signal:controller.signal,cache:'no-store',headers:{'Accept':'application/json'}});
+    const backupResponse=await fetch(backupUrl,{signal:controller.signal,cache:'no-store',headers:{'Accept':'application/hal+json'}});
     if(!backupResponse.ok)throw Error('Alternatieve voertuigbron HTTP '+backupResponse.status);
     const payload=await backupResponse.json();
-    const candidates=Array.isArray(payload)?payload:(payload.results||payload.features||payload.data||payload._embedded?.voertuig||payload._embedded?.vehicles||[]);
+    const embedded=payload?._embedded||{};
+    const embeddedList=Object.values(embedded).find(value=>Array.isArray(value));
+    const candidates=Array.isArray(payload)?payload:(payload.results||payload.features||payload.data||embedded.voertuig||embedded.vehicles||embeddedList||(payload.kenteken?[payload]:[]));
     rows=candidates.map(item=>item.properties||item).filter(Boolean);
-    if(!rows.length&&payload.kenteken)rows=[payload];
+    if(!rows.length&&payload?.kenteken)rows=[payload];
     if(!rows.length)throw Error('Alternatieve bron gaf geen voertuigrecord terug');
     rdwRoute='Open voertuiggegevens Amsterdam (RDW-bron)';
    }finally{clearTimeout(timer);}
@@ -504,15 +506,15 @@ async function lookupRDW(){
   const d=rows[0],pick=(obj,...keys)=>{for(const k of keys)if(obj&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k];return ''};
   const setIf=(id,val)=>{if(val!==''&&val!==null&&val!==undefined)set(id,val)};
   setIf('make',pick(d,'merk','brand','make'));setIf('model',pick(d,'handelsbenaming','handels_benaming','commercial_name','model'));
-  setIf('first',dateValue(pick(d,'datum_eerste_toelating','date_first_admission','first_admission_date')));
+  setIf('first',dateValue(pick(d,'datum_eerste_toelating','datumEersteToelating','date_first_admission','first_admission_date')));
   setIf('nlfirst',dateValue(pick(d,'datum_eerste_tenaamstelling_in_nederland')));
-  setIf('category',pick(d,'voertuigsoort','vehicle_type','vehicle_category'));setIf('body',pick(d,'inrichting','body_type','bodywork'));
-  setIf('color',pick(d,'eerste_kleur','first_colour','color'));setIf('mass',pick(d,'massa_rijklaar','mass_ready','mass_roadworthy'));
+  setIf('category',pick(d,'voertuigsoort','vehicle_type','vehicle_category'));setIf('body',pick(d,'inrichting','body_type','bodywork')||pick(d?.carrosserie?.[0],'typeCarrosserieEuropeseOmschrijving'));
+  setIf('color',pick(d,'eerste_kleur','first_colour','color'));setIf('mass',pick(d,'massa_rijklaar','massaRijklaar','mass_ready','mass_roadworthy'));
   setIf('massEmpty',pick(d,'massa_ledig_voertuig','mass_empty','empty_mass'));setIf('catalogue',pick(d,'catalogusprijs','catalogue_price','catalog_price'));
   setIf('apk',dateValue(pick(d,'vervaldatum_apk','apk_expiry_date')));
   setIf('seats',pick(d,'aantal_zitplaatsen'));setIf('doors',pick(d,'aantal_deuren'));
   setIf('cylinders',pick(d,'aantal_cilinders'));setIf('displacement',pick(d,'cilinderinhoud'));
-  setIf('maxMass',pick(d,'toegestane_maximum_massa_voertuig'));
+  setIf('maxMass',pick(d,'toegestane_maximum_massa_voertuig','toegestaneMaximumMassaVoertuig'));
   setIf('towBraked',pick(d,'maximum_trekken_massa_geremd'));
   setIf('towUnbraked',pick(d,'maximum_massa_trekken_ongeremd'));
   setIf('length',pick(d,'lengte'));setIf('width',pick(d,'breedte'));setIf('height',pick(d,'hoogte_voertuig'));
