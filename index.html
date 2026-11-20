@@ -701,7 +701,7 @@ let energyPoint=null;
 function updateEnergyVehicleHint(){const f=(v('fuel')||'').toLowerCase();const electric= f.includes('elektr')||f.includes('electric');$('energyVehicleHint').textContent='Herkend voertuig: '+[v('make'),v('model')].filter(Boolean).join(' ')+' · Brandstof: '+(v('fuel')||'nog niet bekend')+'. '+(electric?'Laadpunten worden getoond.':'Tankstations worden getoond; bij een plug-in hybride kunnen beide relevant zijn.');}
 function haversineKm(a,b){const r=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return 2*r*Math.asin(Math.sqrt(x));}
 // VVA CHECK GOOGLE MAPS: vervang de tekst hieronder door de nieuwe, domein- en API-beperkte browser-API-sleutel.
-const VVA_GOOGLE_MAPS_API_KEY=AIzaSyAEA0QM-Itha6O57Z8G8KGMqHgob9Za6Q4;
+const VVA_GOOGLE_MAPS_API_KEY=AIzaSyBn-xyzSQVXCqyOTsRZ99XlCtaZK4HwzMg;
 let googleMapsLoaderPromise=null;
 function getGoogleMapsKey(){return VVA_GOOGLE_MAPS_API_KEY.startsWith('AIza')?VVA_GOOGLE_MAPS_API_KEY:'';}
 function loadGoogleMaps(){
