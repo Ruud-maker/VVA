@@ -905,20 +905,25 @@ async function searchEnergyNearby(){
  try{
   let items=[],sourceLabel='';
   if(isElectric){
-   try{items=await searchGoogleChargingStations();items=await enrichGoogleChargingPrices(items);sourceLabel='Google Maps + NDW-tarieven';}
-   catch(googleError){
-    $('energyStatus').textContent='Google Maps niet beschikbaar ('+googleError.message+'). We proberen de openbare NDW-gegevens.';
-    try{items=await getNdwChargingStations();sourceLabel='NDW DOT-NL (terugval)';}
-    catch(ndwError){
-    $('energyStatus').textContent='Google Maps en NDW zijn tijdelijk niet beschikbaar. Als terugval worden OpenStreetMap-laadpunten getoond; deze bevatten niet altijd tarieven.';
+   // NDW is nu de primaire bron: Google beperkt Nearby Search tot een kleine selectie en kan laadpunten overslaan.
+   let ndwItems=[];
+   try{ndwItems=await getNdwChargingStations(1000);sourceLabel='NDW DOT-NL';}catch(ndwError){$('energyStatus').textContent='NDW is tijdelijk niet bereikbaar. We proberen Google Maps als aanvullende bron.';}
+   try{
+    const googleItems=await searchGoogleChargingStations();
+    if(ndwItems.length){
+     for(const g of googleItems){
+      const duplicate=ndwItems.some(n=>haversineKm({lat:g.lat,lon:g.lon},{lat:n.lat,lon:n.lon})<0.15);
+      if(!duplicate)ndwItems.push({...g,source:'Google Maps'});
+     }
+     sourceLabel='NDW DOT-NL + Google Maps';
+    }else{ndwItems=googleItems;sourceLabel='Google Maps (NDW niet beschikbaar)';}
+   }catch(googleError){if(!ndwItems.length)throw googleError;}
+   items=ndwItems.sort((a,b)=>a.distance-b.distance).slice(0,50);
+   if(!items.length){
     const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';
     const query='[out:json][timeout:25];(node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';
-    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));
-    if(!r.ok)throw ndwError;
-    const d=await r.json();
-    items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name||'Laadpunt',type:'charging_station',lat,lon,tags:x.tags||{},address:[x.tags?.['addr:street'],x.tags?.['addr:housenumber'],x.tags?.['addr:postcode'],x.tags?.['addr:city']].filter(Boolean).join(', '),distance:haversineKm(energyPoint,{lat,lon}),price:null,power:x.tags?.capacity||x.tags?.socket||''};}).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,12);
-    sourceLabel='OpenStreetMap (terugval)';
-    }
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));if(!r.ok)throw Error('NDW, Google Maps en OpenStreetMap zijn tijdelijk niet beschikbaar.');
+    const d=await r.json();items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name||'Laadpunt',type:'charging_station',lat,lon,tags:x.tags||{},address:[x.tags?.['addr:street'],x.tags?.['addr:housenumber'],x.tags?.['addr:postcode'],x.tags?.['addr:city']].filter(Boolean).join(', '),distance:haversineKm(energyPoint,{lat,lon}),price:null,power:x.tags?.capacity||x.tags?.socket||'',source:'OpenStreetMap'};}).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,50);sourceLabel='OpenStreetMap (terugval)';
    }
   }else{items=await getOsmFuelStations();sourceLabel='OpenStreetMap';}
   if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}
@@ -939,13 +944,13 @@ async function searchEnergyNearby(){
    ].filter(Boolean).join(' · ');
    const url='https://www.google.com/maps/dir/?api=1&destination='+x.lat+','+x.lon+'&travelmode=driving';
    const placeUrl=x.googleMapsURI||('https://www.google.com/maps/search/?api=1&query='+x.lat+','+x.lon);
-   const priceMarkup=isElectric?'<div class="charging-card-price" style="margin:8px 0;font-weight:800;color:#14532d">'+formatEnergyPrice(x.price)+(x.price&&x.tariffSource?' · bron: '+x.tariffSource:'')+'</div>':'';
+   const priceMarkup=isElectric?'<div class="charging-card-price" style="margin:8px 0;font-weight:800;color:#14532d">'+formatEnergyPrice(x.price)+(x.price?' · bron: NDW DOT-NL':' · tarief niet gepubliceerd')+'</div>':'';
    return '<article class="result energy-card '+(isElectric?'charging-card':'fuel-card')+'" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(isElectric?'Laadpunt':'Tankstation')+'</div><div>'+esc(address||'Adres niet beschikbaar in de bron')+'</div><div style="margin-top:6px">'+esc(details||'Aanvullende gegevens niet beschikbaar')+'</div>'+priceMarkup+'<div class="energy-links" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:7px"><a href="'+placeUrl+'" target="_blank" rel="noopener">Adres / locatie in Google Maps</a><a href="'+url+'" target="_blank" rel="noopener">Route in Google Maps</a></div></article>';
   }).join('');
   if(isElectric){
-   const withPrice=items.filter(x=>x.price).length;
+   const withPrice=items.filter(x=>x.price&&Number.isFinite(Number(x.price.amount))).length;
    $('chargingPriceSummary').style.display='block';
-   $('chargingPriceSummary').innerHTML='<b>'+(sourceLabel.includes('Google Maps')?'Google Maps · laadstations + NDW-tarieven':'NDW DOT-NL · tarieven per laadpunt')+'</b><div class="hint">'+(sourceLabel.includes('Google Maps')?'Locaties zijn via Google Maps gevonden. Waar een laadpunt binnen 150 meter overeenkomt met NDW, tonen we het daar gepubliceerde exploitantentarief. '+withPrice+' van '+items.length+' laadpunten hebben zo een tarief. Dit is niet automatisch de prijs van iedere laadpas.':' '+withPrice+' van '+items.length+' laadpunten hebben een gepubliceerd kWh-tarief. Bij ontbrekende tarieven wordt geen prijs geschat. Tarieven kunnen verschillen per laadpas en kunnen start- of tijdkosten bevatten.')+'</div>'+'<a href="https://docs.ndw.nu/data-uitwisseling/interface-beschrijvingen/dafne-api/dafne_api_consumer_pull/" target="_blank" rel="noopener">Bron en technische documentatie NDW</a>';
+   $('chargingPriceSummary').innerHTML='<b>Laadprijzen en laadpunten · '+esc(sourceLabel)+'</b><div class="hint">'+withPrice+' van '+items.length+' gevonden laadpunten hebben een door de exploitant gepubliceerd kWh-tarief. De overige punten blijven zichtbaar, ook zonder prijsinformatie. Dit is het exploitantentarief uit de bron en niet automatisch de prijs via iedere laadpas; start- en tijdkosten kunnen apart gelden.</div><a href="https://www.ndw.nu/dataportalen/dot-nl" target="_blank" rel="noopener">Bron: NDW DOT-NL</a>';
   }else await getFuelPriceSummary();
  }catch(e){
   $('energyStatus').textContent='De locaties konden niet worden opgehaald ('+e.message+'). Probeer het later opnieuw of open Google Maps.';
