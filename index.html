@@ -476,19 +476,40 @@ async function lookupRDW(){
  clear.forEach(id=>$(id).value='');$('rdwsource').value='Bezig…';
  try{
   const mainUrl='https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken='+encodeURIComponent(plate)+'&$limit=1';
-  const response=await fetch(mainUrl);if(!response.ok)throw Error('RDW hoofdregister HTTP '+response.status);
-  const rows=await response.json();
+  let rows=[],rdwRoute='RDW Open Data';
+  try{
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+   try{
+    const response=await fetch(mainUrl,{signal:controller.signal,cache:'no-store'});
+    if(!response.ok)throw Error('RDW hoofdregister HTTP '+response.status);
+    rows=await response.json();
+   }finally{clearTimeout(timer);}
+  }catch(primaryError){
+   $('status').textContent='Rechtstreekse RDW-verbinding niet beschikbaar; tweede openbare gegevensroute wordt geprobeerd…';
+   const backupUrl='https://api.data.amsterdam.nl/v1/rdw/v1/voertuig/?kenteken='+encodeURIComponent(plate);
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+   try{
+    const backupResponse=await fetch(backupUrl,{signal:controller.signal,cache:'no-store',headers:{'Accept':'application/json'}});
+    if(!backupResponse.ok)throw Error('Alternatieve voertuigbron HTTP '+backupResponse.status);
+    const payload=await backupResponse.json();
+    const candidates=Array.isArray(payload)?payload:(payload.results||payload.features||payload.data||payload._embedded?.voertuig||payload._embedded?.vehicles||[]);
+    rows=candidates.map(item=>item.properties||item).filter(Boolean);
+    if(!rows.length&&payload.kenteken)rows=[payload];
+    if(!rows.length)throw Error('Alternatieve bron gaf geen voertuigrecord terug');
+    rdwRoute='Open voertuiggegevens Amsterdam (RDW-bron)';
+   }finally{clearTimeout(timer);}
+  }
   if(requestId!==rdwLookupSequence)return;
   if(!rows.length){$('rdwsource').value='Niet gevonden';$('status').textContent='Geen voertuig gevonden voor dit kenteken.';return}
   const d=rows[0],pick=(obj,...keys)=>{for(const k of keys)if(obj&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k];return ''};
   const setIf=(id,val)=>{if(val!==''&&val!==null&&val!==undefined)set(id,val)};
-  setIf('make',pick(d,'merk'));setIf('model',pick(d,'handelsbenaming'));
-  setIf('first',dateValue(pick(d,'datum_eerste_toelating')));
+  setIf('make',pick(d,'merk','brand','make'));setIf('model',pick(d,'handelsbenaming','handels_benaming','commercial_name','model'));
+  setIf('first',dateValue(pick(d,'datum_eerste_toelating','date_first_admission','first_admission_date')));
   setIf('nlfirst',dateValue(pick(d,'datum_eerste_tenaamstelling_in_nederland')));
-  setIf('category',pick(d,'voertuigsoort'));setIf('body',pick(d,'inrichting'));
-  setIf('color',pick(d,'eerste_kleur'));setIf('mass',pick(d,'massa_rijklaar'));
-  setIf('massEmpty',pick(d,'massa_ledig_voertuig'));setIf('catalogue',pick(d,'catalogusprijs'));
-  setIf('apk',dateValue(pick(d,'vervaldatum_apk')));
+  setIf('category',pick(d,'voertuigsoort','vehicle_type','vehicle_category'));setIf('body',pick(d,'inrichting','body_type','bodywork'));
+  setIf('color',pick(d,'eerste_kleur','first_colour','color'));setIf('mass',pick(d,'massa_rijklaar','mass_ready','mass_roadworthy'));
+  setIf('massEmpty',pick(d,'massa_ledig_voertuig','mass_empty','empty_mass'));setIf('catalogue',pick(d,'catalogusprijs','catalogue_price','catalog_price'));
+  setIf('apk',dateValue(pick(d,'vervaldatum_apk','apk_expiry_date')));
   setIf('seats',pick(d,'aantal_zitplaatsen'));setIf('doors',pick(d,'aantal_deuren'));
   setIf('cylinders',pick(d,'aantal_cilinders'));setIf('displacement',pick(d,'cilinderinhoud'));
   setIf('maxMass',pick(d,'toegestane_maximum_massa_voertuig'));
@@ -521,7 +542,7 @@ async function lookupRDW(){
    }
   }catch(fuelError){fuelNote='Brandstofdataset niet bereikbaar'}
   if(requestId!==rdwLookupSequence)return;
-  $('rdwsource').value='RDW Open Data – basis + brandstof';
+  $('rdwsource').value=rdwRoute+' – basis + brandstof';
   $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Terugroepacties worden apart gecontroleerd met de knop hieronder.';
   await updateVehiclePhoto();if(requestId!==rdwLookupSequence)return;saveLastVehicle();await lookupRecalls();
  }catch(e){
