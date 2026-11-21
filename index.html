@@ -550,8 +550,17 @@ async function lookupRDW(){
   await updateVehiclePhoto();if(requestId!==rdwLookupSequence)return;saveLastVehicle();await lookupRecalls();
  }catch(e){
   if(requestId!==rdwLookupSequence)return;
-  $('rdwsource').value='Ophalen mislukt';
-  $('status').textContent='RDW ophalen niet gelukt. Controleer internetverbinding of probeer later opnieuw ('+e.message+').';
+  let restored=false;
+  try{
+   const cache=JSON.parse(localStorage.getItem('vva_vehicle_cache')||'{}');
+   const saved=cache[plate];
+   if(saved&&saved.fields){Object.entries(saved.fields).forEach(([id,value])=>{if($(id))$(id).value=value??'';});restored=true;}
+  }catch(cacheError){}
+  $('rdwsource').value=restored?'Opgeslagen voertuiggegevens':'Ophalen mislukt';
+  $('status').textContent=restored
+   ?'RDW-verbinding niet beschikbaar. De laatst succesvol opgehaalde gegevens voor dit kenteken zijn teruggezet ('+e.message+'). Controleer de actualiteit zodra RDW weer bereikbaar is.'
+   :'Kentekenopvraag mislukt: RDW en de alternatieve verbinding zijn niet bereikbaar. Voor dit kenteken staan nog geen eerder opgehaalde gegevens op dit apparaat ('+e.message+').';
+  updateEnergyVehicleHint();
  }
 }
 async function lookupRecalls(){
@@ -648,6 +657,7 @@ function saveLastVehicle(){
  if(!data.plate&&!data.vin)return;
  try{
   localStorage.setItem('vva_last_vehicle',JSON.stringify(data));
+  if(validPlate){let cache=JSON.parse(localStorage.getItem('vva_vehicle_cache')||'{}');cache[data.plate]=data;const keys=Object.keys(cache).sort((a,b)=>String(cache[b]?.savedAt||'').localeCompare(String(cache[a]?.savedAt||'')));for(const key of keys.slice(20))delete cache[key];localStorage.setItem('vva_vehicle_cache',JSON.stringify(cache));}
   let history=JSON.parse(localStorage.getItem('vva_plate_history')||'[]');
   history=history.filter(x=>isValidDutchHistoryPlate(x.plate));
   if(data.plate){
