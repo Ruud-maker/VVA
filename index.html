@@ -468,18 +468,20 @@ async function updateVehiclePhoto(){
 let rdwLookupSequence=0;
 
 async function fetchRdwJsonWithFallback(url){
+ // RDW blijft de bron. Alleen de transportroute verschilt: direct of via een
+ // CORS-doorgeefdienst. De oude AllOrigins-route gaf bij deze RDW-query HTTP 400.
  const attempts=[
   {name:'RDW rechtstreeks',url},
-  {name:'Alternatieve openbare proxy',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(url)}
+  {name:'RDW via cors.dev',url:'https://proxy.cors.dev/'+url}
  ];
  let lastError=null;
  for(const attempt of attempts){
   try{
    const controller=new AbortController();
-   const timer=setTimeout(()=>controller.abort(),15000);
+   const timer=setTimeout(()=>controller.abort(),25000);
    let response;
    try{
-    response=await fetch(attempt.url,{method:'GET',cache:'no-store',signal:controller.signal,headers:{'Accept':'application/json'}});
+    response=await fetch(attempt.url,{method:'GET',cache:'no-store',credentials:'omit',signal:controller.signal,headers:{'Accept':'application/json'}});
    }finally{clearTimeout(timer);}
    if(!response.ok)throw Error(attempt.name+' HTTP '+response.status);
    const data=await response.json();
@@ -487,7 +489,7 @@ async function fetchRdwJsonWithFallback(url){
    return {data,source:attempt.name};
   }catch(err){lastError=err;}
  }
- throw Error('RDW-verbinding via beide routes mislukt: '+(lastError?.message||'onbekende fout'));
+ throw Error('Kentekenbron niet bereikbaar via RDW of alternatieve route: '+(lastError?.message||'onbekende fout'));
 }
 
 async function lookupRDW(){
