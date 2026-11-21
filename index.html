@@ -466,6 +466,30 @@ async function updateVehiclePhoto(){
 }
 
 let rdwLookupSequence=0;
+
+async function fetchRdwJsonWithFallback(url){
+ const attempts=[
+  {name:'RDW rechtstreeks',url},
+  {name:'Alternatieve openbare proxy',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(url)}
+ ];
+ let lastError=null;
+ for(const attempt of attempts){
+  try{
+   const controller=new AbortController();
+   const timer=setTimeout(()=>controller.abort(),15000);
+   let response;
+   try{
+    response=await fetch(attempt.url,{method:'GET',cache:'no-store',signal:controller.signal,headers:{'Accept':'application/json'}});
+   }finally{clearTimeout(timer);}
+   if(!response.ok)throw Error(attempt.name+' HTTP '+response.status);
+   const data=await response.json();
+   if(!Array.isArray(data))throw Error(attempt.name+' gaf geen JSON-lijst terug');
+   return {data,source:attempt.name};
+  }catch(err){lastError=err;}
+ }
+ throw Error('RDW-verbinding via beide routes mislukt: '+(lastError?.message||'onbekende fout'));
+}
+
 async function lookupRDW(){
  const requestId=++rdwLookupSequence;
  const plate=cleanPlate(v('plate'));
@@ -476,8 +500,8 @@ async function lookupRDW(){
  clear.forEach(id=>$(id).value='');$('rdwsource').value='Bezig…';
  try{
   const mainUrl='https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken='+encodeURIComponent(plate)+'&$limit=1';
-  const response=await fetch(mainUrl);if(!response.ok)throw Error('RDW hoofdregister HTTP '+response.status);
-  const rows=await response.json();
+  const mainResult=await fetchRdwJsonWithFallback(mainUrl);
+  const rows=mainResult.data;
   if(requestId!==rdwLookupSequence)return;
   if(!rows.length){$('rdwsource').value='Niet gevonden';$('status').textContent='Geen voertuig gevonden voor dit kenteken.';return}
   const d=rows[0],pick=(obj,...keys)=>{for(const k of keys)if(obj&&obj[k]!==undefined&&obj[k]!==null&&obj[k]!=='')return obj[k];return ''};
@@ -502,9 +526,9 @@ async function lookupRDW(){
   let fuelNote='Brandstofdataset niet opgehaald';
   try{
    const fuelUrl='https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken='+encodeURIComponent(plate)+'&$limit=10';
-   const fr=await fetch(fuelUrl);
-   if(fr.ok){
-    const fuelRows=await fr.json();
+   const fuelResult=await fetchRdwJsonWithFallback(fuelUrl);
+   {
+    const fuelRows=fuelResult.data;
     if(requestId!==rdwLookupSequence)return;
     if(fuelRows.length){
      const f=fuelRows[0];
