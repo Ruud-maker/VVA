@@ -269,27 +269,31 @@ textarea{min-height:75px}
  <div class="panel card">
   <div class="cardhead">€ Dagwaarde &amp; voertuigwaardering</div>
   <div class="cardbody">
-   <p class="hint">Leg hier de waardes vast die je bij Dagwaarde.nl hebt opgevraagd. Automatisch ophalen is nog niet gekoppeld; je kunt de website rechtstreeks openen en de uitkomsten daarna hier invoeren.</p>
+   <p class="hint">Vraag een voertuigwaardering aan via de officiële Autotelex-koppeling. Kenteken en kilometerstand worden uit het VVA-voertuigdossier overgenomen. Er worden geen voorbeeldbedragen getoond.</p>
    <div class="actions" style="margin:10px 0 14px">
     <button type="button" onclick="copyVehicleToValuation()">↧ Neem voertuiggegevens over</button>
-    <button type="button" class="secondary" onclick="window.open('https://www.dagwaarde.nl/','_blank','noopener')">↗ Open Dagwaarde.nl</button>
    </div>
    <div class="vehiclegrid">
     <label for="valuationPlate">Kenteken</label><input id="valuationPlate" readonly placeholder="Wordt overgenomen uit voertuig">
-    <label for="valuationMileage">Kilometerstand</label><input id="valuationMileage" type="number" min="0" step="1" placeholder="Bijv. 60000">
-    <label for="valuationConsumerPrice">Consumentenprijs incl. opties (€)</label><input id="valuationConsumerPrice" type="number" min="0" step="0.01" placeholder="Bijv. 44199">
-    <label for="dayValue">Dagwaarde / vervangingswaarde (€)</label><input id="dayValue" type="number" min="0" step="0.01" placeholder="Bijv. 28539">
-    <label for="tradeValue">Inruilwaarde (€)</label><input id="tradeValue" type="number" min="0" step="0.01" placeholder="Bijv. 26039">
-    <label for="valuationDate">Datum waardering</label><input id="valuationDate" type="date">
-    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="Dagwaarde.nl" readonly>
-    <label for="valuationNotes">Opmerkingen</label><textarea id="valuationNotes" rows="3" placeholder="Bijvoorbeeld uitvoering, opties of bijzonderheden"></textarea>
+    <label for="valuationMileage">Kilometerstand</label><input id="valuationMileage" type="number" min="0" step="1" placeholder="Vul actuele kilometerstand in">
+    <label for="valuationDate">Peildatum waardering</label><input id="valuationDate" type="date">
    </div>
    <div class="actions" style="margin-top:14px">
-    <button type="button" onclick="saveValuation()">✓ Waardering opslaan in dossier</button>
+    <button type="button" onclick="requestAutotelexValuation()">↻ Waardering ophalen</button>
+    <button type="button" class="secondary" onclick="saveValuation()">✓ Waardering opslaan in dossier</button>
     <button type="button" class="secondary" onclick="clearValuation()">Waardering wissen</button>
    </div>
-   <div class="result" id="valuationResult" aria-live="polite">Vul de waardes van Dagwaarde.nl in en sla ze op in het voertuigdossier.</div>
-   <p class="hint">Let op: de bedragen worden handmatig ingevoerd en zijn afkomstig van jouw eigen raadpleging bij Dagwaarde.nl. VVA haalt deze bedragen niet automatisch op en controleert ze niet onafhankelijk.</p>
+   <div class="result" id="valuationResult" aria-live="polite">Autotelex-koppeling voorbereid. API-testtoegang en een beveiligde tussenserver moeten nog worden geactiveerd.</div>
+   <div class="vehiclegrid" style="margin-top:12px">
+    <label for="valuationConsumerPrice">Consumentenprijs incl. opties (€)</label><input id="valuationConsumerPrice" type="number" readonly>
+    <label for="dayValue">Dagwaarde / vervangingswaarde (€)</label><input id="dayValue" type="number" readonly>
+    <label for="tradeValue">Inruilwaarde (€)</label><input id="tradeValue" type="number" readonly>
+    <label for="valuationWholesale">Handelswaarde (€)</label><input id="valuationWholesale" type="number" readonly>
+    <label for="valuationRetail">Verkoopwaarde (€)</label><input id="valuationRetail" type="number" readonly>
+    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="Autotelex – nog niet geactiveerd" readonly>
+    <label for="valuationNotes">Opmerkingen</label><textarea id="valuationNotes" rows="3" placeholder="Optionele opmerkingen"></textarea>
+   </div>
+   <p class="hint">De automatische waardering werkt pas nadat Autotelex een testaccount, rechten en de juiste API-specificatie heeft verstrekt. API-sleutels worden uitsluitend op de beveiligde tussenserver opgeslagen, nooit in deze webpagina.</p>
   </div>
  </div>
 </section>
@@ -339,7 +343,7 @@ function chooseReport(name,price){
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationNotes'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationWholesale','valuationRetail','valuationNotes'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
 
@@ -1030,13 +1034,49 @@ function calcBpm(){return calcBpmFromImport()}
 function calcBpmFromImport(){const gross=n('grossBpm'),dep=n('depreciation');if(!v('grossBpm')||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod')+'<br><small>Indicatieve berekening; controleer tarief en methode.</small>';}
 function calcImport(){const price=n('importPrice'),freight=n('freight'),rate=n('importDuty'),vatRate=n('vatRate')/100,origin=v('importOrigin');if(!price){alert('Vul aankoopprijs in.');return}const base=price+freight,duty=origin==='non-eu'?base*rate/100:0,vat=origin==='non-eu'?(base+duty+n('otherCosts'))*vatRate:0,total=price+freight+duty+vat+n('otherCosts')+n('inland')+n('rdwCosts');$('importResult').innerHTML='Aankoopprijs: '+money(price)+'<br>Transport tot EU-grens: '+money(freight)+'<br>Indicatief invoerrecht: '+money(duty)+'<br>Indicatieve btw: '+money(vat)+'<br>Overige kosten: '+money(n('otherCosts')+n('inland')+n('rdwCosts'))+'<hr><span class="total">Totaal vóór BPM: '+money(total)+'</span><small>Vereenvoudigde indicatie; controleer de wettelijke douane- en btw-grondslag.</small>'}
 function market(site){const q=[v('make'),v('model'),(v('first')||'').slice(0,4),'occasion'].filter(Boolean).join(' ');if(!q){alert('Vul eerst merk en model in of haal RDW-gegevens op.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(q+' site:'+site),'_blank','noopener')}
+/* Configureer na ontvangst van Autotelex-toegang de HTTPS Worker-URL in VVA_AUTOTELEX_ENDPOINT. Laat deze leeg zolang er geen account is. */
+window.VVA_AUTOTELEX_ENDPOINT = window.VVA_AUTOTELEX_ENDPOINT || '';
 function copyVehicleToValuation(){
  $('valuationPlate').value=v('plate');
  if(v('km'))$('valuationMileage').value=v('km');
- if(v('catalogue'))$('valuationConsumerPrice').value=v('catalogue');
  if(!$('valuationDate').value)$('valuationDate').value=new Date().toISOString().slice(0,10);
- $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Vul nu de waardes van Dagwaarde.nl in.';
+ $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Vul of controleer de actuele kilometerstand.';
 }
+async function requestAutotelexValuation(){
+ const plate=String(v('valuationPlate')||v('plate')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ const mileage=Number(v('valuationMileage')||v('km'));
+ if(!plate){$('valuationResult').textContent='Vul eerst een kenteken in of neem voertuiggegevens over.';return}
+ if(!Number.isFinite(mileage)||mileage<=0){$('valuationResult').textContent='Vul eerst de actuele kilometerstand in.';return}
+ const endpoint=window.VVA_AUTOTELEX_ENDPOINT||'';
+ if(!endpoint){$('valuationResult').textContent='Nog niet geactiveerd: de beveiligde Autotelex-tussenserver is nog niet gekoppeld. De API-testtoegang ontbreekt nog.';return}
+ $('valuationResult').textContent='Autotelex-waardering wordt aangevraagd…';
+ try{
+  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plate,mileage,valuationDate:v('valuationDate')||new Date().toISOString().slice(0,10)})});
+  const payload=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(payload.error||('HTTP '+response.status));
+  const values=payload.values||payload;
+  const setMoney=(id,value)=>{if(value!==null&&value!==undefined&&value!=='')$(id).value=Number(value)};
+  setMoney('valuationConsumerPrice',values.consumerPrice);
+  setMoney('dayValue',values.replacementValue??values.dayValue);
+  setMoney('tradeValue',values.tradeValue);
+  setMoney('valuationWholesale',values.wholesaleValue);
+  setMoney('valuationRetail',values.retailValue);
+  $('valuationSource').value=payload.source||'Autotelex';
+  $('valuationResult').textContent='Waardering ontvangen. Controleer de waarden en sla ze daarna op in het dossier.';
+ }catch(error){$('valuationResult').textContent='Waardering niet opgehaald: '+error.message+'. Controleer de API-toegang en tussenserver.'}
+}
+function saveValuation(){
+ if(!v('valuationPlate')&&!v('plate')){alert('Vul eerst een kenteken in of neem de voertuiggegevens over.');return}
+ if(!v('dayValue')&&!v('tradeValue')&&!v('valuationWholesale')&&!v('valuationRetail')){alert('Er zijn nog geen waarderingsgegevens ontvangen. Haal eerst een waardering op.');return}
+ if(!v('valuationPlate'))$('valuationPlate').value=v('plate');
+ if(!$('valuationDate').value)$('valuationDate').value=new Date().toISOString().slice(0,10);
+ const d=getData(),i=dossiers.findIndex(x=>x.id===d.id);
+ if(i<0)dossiers.push(d);else dossiers[i]=d;
+ currentId=d.id;localStorage.setItem('vva_check_dossiers',JSON.stringify(dossiers));renderDossiers();
+ $('valuationResult').textContent='Waardering opgeslagen in dossier.';
+}
+function clearValuation(){['valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationWholesale','valuationRetail','valuationDate','valuationNotes'].forEach(id=>$(id).value='');$('valuationSource').value='Autotelex – nog niet geactiveerd';$('valuationResult').textContent='Waarderingsvelden gewist.';}
+
 function saveValuation(){
  if(!v('valuationPlate')&&!v('plate')){alert('Vul eerst een kenteken in of neem de voertuiggegevens over.');return}
  if(!v('dayValue')&&!v('tradeValue')){alert('Vul minimaal de dagwaarde of inruilwaarde in.');return}

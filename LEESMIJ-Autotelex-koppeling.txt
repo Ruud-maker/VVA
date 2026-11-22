@@ -1,0 +1,42 @@
+VVA CHECK – AUTOTELEX API VOORBEREIDING
+
+Meegeleverd:
+- VVA-Check-Autotelex-voorbereid-index.html
+- vva-autotelex-worker.js
+- deze leesmij
+
+Wat is voorbereid:
+- Geen vaste Volvo-testkentekens of voorbeeldbedragen in de Dagwaarde-module.
+- Kenteken en kilometerstand overnemen uit het VVA-voertuigdossier.
+- Waardering ophalen via een beveiligd backend-endpoint.
+- Resultaatvelden voor consumentenprijs, vervangings-/dagwaarde, inruilwaarde,
+  handelswaarde en verkoopwaarde.
+- API-wachtwoorden horen uitsluitend als Cloudflare Worker secrets opgeslagen te worden.
+
+Wat nog nodig is:
+Autotelex beschrijft de DataAPI-flow als GetVendorToken gevolgd door
+GetVehicleDataPRO. De waardes staan in VehicleTaxData.RestWaarden.
+Autotelex geeft aan dat leveranciers contractuele rechten nodig hebben en dat
+de leverancier verantwoordelijk is voor kosten van gegevensaanvragen.
+De VehicleParameters-specificatie wordt apart verstrekt. Zonder testaccount,
+vendor-credentials, rechten en actuele test-WSDL/API-specificatie kan de echte
+aanroep niet betrouwbaar worden afgerond.
+
+Na ontvangst van Autotelex-testtoegang:
+1. Worker publiceren in Cloudflare.
+2. Secrets instellen (niet in index.html):
+   AUTOTELEX_VENDOR_USERNAME
+   AUTOTELEX_VENDOR_PASSWORD
+   AUTOTELEX_API_MODE
+   AUTOTELEX_API_URL
+3. Worker-adapter invullen met de officiële testdocumentatie.
+4. In de HTML window.VVA_AUTOTELEX_ENDPOINT instellen op de Worker-URL.
+5. Testen met kenteken + kilometerstand voordat productie wordt geactiveerd.
+
+Status: voorbereid, NIET actief. De Worker geeft bewust een duidelijke melding
+in plaats van fictieve waardes terug te geven.
+
+Documentatie:
+https://www.autotelex.nl/autotelex-voor-developers/
+https://catalogartifact.azureedge.net/publicartifacts/autotelexbv1678889270589.autotelexapi-5a5b1c7e-1473-4db5-9c06-273b17ab9ffc/Artifacts/Documents/AutotelexPRODataAPIWebservice.pdf
+Contact: info@autotelex.nl / 026-3700099
