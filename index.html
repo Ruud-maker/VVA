@@ -297,44 +297,6 @@ textarea{min-height:75px}
 <p class="hint">Dossiers worden lokaal in deze browser bewaard. Exporteer regelmatig een back-up. De gegevens worden niet naar een server verzonden.</p>
 <div class="actions"><button onclick="saveRecord()">Huidig dossier opslaan</button><button class="secondary" onclick="exportCSV()">CSV export</button><button class="secondary" onclick="exportJSON()">JSON export</button><button class="secondary" onclick="window.print()">Print / PDF</button><button class="secondary" onclick="newRecord()">Nieuw dossier</button></div><h3>Opgeslagen dossiers</h3><div id="records">Nog geen dossiers opgeslagen.</div>
 </div></div></section>
-<section class="panel card" id="rapport-kopen" style="margin-top:16px">
-<div class="cardhead">VVA Check – Kies uw rapport</div>
-<div class="cardbody">
-<p class="hint">Voor autobedrijven en professionele auto-importeurs. Prijzen zijn exclusief 21% btw. De online betaalfunctie wordt pas actief nadat de betaalprovider en zakelijke betaalgegevens zijn gekoppeld.</p>
-<div class="pricing-grid">
-<article class="price-card"><h3>Basis</h3><div class="price">€ 7,95 <small>excl. btw</small></div><p>Voertuigoverzicht en beschikbare RDW-gegevens.</p><ul><li>Voertuigkenmerken</li><li>Kentekenregistratiegegevens</li><li>PDF-voertuigoverzicht</li></ul><button onclick="chooseReport('Basis',7.95)">Kies Basis</button></article>
-<article class="price-card featured"><div class="price-label">Meest gekozen</div><h3>Import</h3><div class="price">€ 14,95 <small>excl. btw</small></div><p>Een praktisch dossier voor de voorbereiding van auto-import.</p><ul><li>Alles uit Basis</li><li>Importkostenindicatie</li><li>BPM-werkberekening</li><li>TARIC en oorsprong vastleggen</li><li>PDF-importdossier</li></ul><button onclick="chooseReport('Import',14.95)">Kies Import</button></article>
-<article class="price-card"><h3>Compleet</h3><div class="price">€ 24,95 <small>excl. btw</small></div><p>Uitgebreidere documentatie voor het voertuigdossier.</p><ul><li>Alles uit Import</li><li>Marktvergelijkingsnotities</li><li>Uitgebreide dossierdocumentatie</li><li>PDF-rapport en CSV-export</li></ul><button onclick="chooseReport('Compleet',24.95)">Kies Compleet</button></article>
-</div>
-<div aria-live="polite" class="result" id="checkout-demo">Selecteer een rapport om de bestelling samen te stellen. Er wordt nog geen betaling uitgevoerd.</div>
-<div class="actions"><button class="secondary" onclick="window.print()">Voorbeeld rapport afdrukken</button><a class="btn secondary" href="#dossier">Naar dossierbeheer</a></div>
-</div>
-</section>
-<style>
-.pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
-.price-card{border:1px solid #bfd3ec;border-radius:14px;padding:15px;background:linear-gradient(#fff,#f4f8ff);position:relative}
-.price-card.featured{border:2px solid #1680d5;box-shadow:0 3px 12px #1677c52a}
-.price-card h3{margin:2px 0 8px;color:#0b2b65;font-size:20px}
-.price{font-size:28px;font-weight:800;color:#0756a5;margin:6px 0}
-.price small{font-size:11px;font-weight:500;color:#586b86}
-.price-card p{min-height:42px;font-size:13px;color:#52647e}
-.price-card ul{padding-left:18px;min-height:112px;font-size:13px;line-height:1.6}
-.price-label{position:absolute;right:10px;top:10px;font-size:10px;font-weight:700;background:#d9f3d5;padding:5px 8px;border-radius:20px}
-@media(max-width:800px){.pricing-grid{grid-template-columns:1fr}.price-card p,.price-card ul{min-height:0}}
-</style>
-<script>
-function chooseReport(name,price){
- const total=(price*1.21).toFixed(2);
- const fmt=x=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(x);
- const plate=(document.getElementById('plate')?.value||'').trim();
- document.getElementById('checkout-demo').innerHTML=
- '<b>Geselecteerd: VVA Check '+name+'</b><br>Rapportprijs: '+fmt(price)+' excl. btw<br>'+
- 'Btw (21%): '+fmt(price*.21)+'<br><b>Totaal inclusief btw: '+fmt(Number(total))+'</b><br>'+
- 'Kenteken: '+(plate?plate.replace(/[&<>"']/g,''):'nog niet ingevuld')+
- '<p class="hint">Dit is een bestelvoorbeeld. De betaling is nog niet geactiveerd. Voor live verkoop moet een Mollie-account worden ingericht en moet de betaling via een beveiligde server worden bevestigd. Zet geen geheime API-sleutel in dit HTML-bestand.</p>'+
- '<button class="secondary" onclick="alert(&quot;De betaalmodule is nog niet gekoppeld. Er wordt geen betaling uitgevoerd.&quot;)">Betaling nog niet beschikbaar</button>';
-}
-</script>
 <section class="panel footer"><div class="actions"><button class="secondary" onclick="window.print()">▤ PDF rapport</button><button class="secondary" onclick="exportCSV()">▦ Excel / CSV export</button><button class="secondary" onclick="exportJSON()">CSV / JSON</button><button class="secondary" onclick="window.print()">▣ Printen</button><button class="secondary" onclick="showTab('dossier',document.querySelectorAll('.tab')[4])">◉ Voorbeeld rapport</button></div><div class="rvg">RVG</div></section>
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
