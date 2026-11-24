@@ -269,10 +269,10 @@ textarea{min-height:75px}
  <div class="panel card">
   <div class="cardhead">€ Dagwaarde &amp; voertuigwaardering</div>
   <div class="cardbody">
-   <p class="hint">Leg hier de waardes vast die je bij Dagwaarde.nl hebt opgevraagd. Automatisch ophalen is nog niet gekoppeld; je kunt de website rechtstreeks openen en de uitkomsten daarna hier invoeren.</p>
+   <p class="hint">Leg hier de waardes vast die je via de ANWB Koerslijst hebt opgevraagd. Open de ANWB Koerslijst vanuit VVA en neem de uitkomsten daarna over in dit dossier. Automatische gegevensuitwisseling is niet beschikbaar zolang ANWB geen API-toegang heeft bevestigd.</p>
    <div class="actions" style="margin:10px 0 14px">
     <button type="button" onclick="copyVehicleToValuation()">↧ Neem voertuiggegevens over</button>
-    <button type="button" class="secondary" onclick="window.open('https://www.dagwaarde.nl/','_blank','noopener')">↗ Open Dagwaarde.nl</button>
+    <button type="button" class="secondary" onclick="window.open('https://www.anwb.nl/auto/koerslijst','_blank','noopener')">↗ Open ANWB Koerslijst</button>
    </div>
    <div class="vehiclegrid">
     <label for="valuationPlate">Kenteken</label><input id="valuationPlate" readonly placeholder="Wordt overgenomen uit voertuig">
@@ -281,15 +281,15 @@ textarea{min-height:75px}
     <label for="dayValue">Dagwaarde / vervangingswaarde (€)</label><input id="dayValue" type="number" min="0" step="0.01" placeholder="Bijv. 28539">
     <label for="tradeValue">Inruilwaarde (€)</label><input id="tradeValue" type="number" min="0" step="0.01" placeholder="Bijv. 26039">
     <label for="valuationDate">Datum waardering</label><input id="valuationDate" type="date">
-    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="Dagwaarde.nl" readonly>
+    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="ANWB Koerslijst (handmatige invoer)" readonly>
     <label for="valuationNotes">Opmerkingen</label><textarea id="valuationNotes" rows="3" placeholder="Bijvoorbeeld uitvoering, opties of bijzonderheden"></textarea>
    </div>
    <div class="actions" style="margin-top:14px">
     <button type="button" onclick="saveValuation()">✓ Waardering opslaan in dossier</button>
     <button type="button" class="secondary" onclick="clearValuation()">Waardering wissen</button>
    </div>
-   <div class="result" id="valuationResult" aria-live="polite">Vul de waardes van Dagwaarde.nl in en sla ze op in het voertuigdossier.</div>
-   <p class="hint">Let op: de bedragen worden handmatig ingevoerd en zijn afkomstig van jouw eigen raadpleging bij Dagwaarde.nl. VVA haalt deze bedragen niet automatisch op en controleert ze niet onafhankelijk.</p>
+   <div class="result" id="valuationResult" aria-live="polite">Vul de waardes uit de ANWB Koerslijst in en sla ze op in het voertuigdossier.</div>
+   <p class="hint">Let op: de bedragen worden handmatig ingevoerd na raadpleging van de ANWB Koerslijst. VVA haalt geen waardes automatisch op en controleert ze niet onafhankelijk.</p>
   </div>
  </div>
 </section>
@@ -1044,7 +1044,7 @@ function copyVehicleToValuation(){
  if(v('km'))$('valuationMileage').value=v('km');
  if(v('catalogue'))$('valuationConsumerPrice').value=v('catalogue');
  if(!$('valuationDate').value)$('valuationDate').value=new Date().toISOString().slice(0,10);
- $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Vul nu de waardes van Dagwaarde.nl in.';
+ $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Open de ANWB Koerslijst en vul daarna de waardes hier in.';
 }
 function saveValuation(){
  if(!v('valuationPlate')&&!v('plate')){alert('Vul eerst een kenteken in of neem de voertuiggegevens over.');return}
