@@ -269,31 +269,27 @@ textarea{min-height:75px}
  <div class="panel card">
   <div class="cardhead">€ Dagwaarde &amp; voertuigwaardering</div>
   <div class="cardbody">
-   <p class="hint">Vraag een voertuigwaardering aan via de officiële Autotelex-koppeling. Kenteken en kilometerstand worden uit het VVA-voertuigdossier overgenomen. Er worden geen voorbeeldbedragen getoond.</p>
+   <p class="hint">Leg hier de waardes vast die je bij Dagwaarde.nl hebt opgevraagd. Automatisch ophalen is nog niet gekoppeld; je kunt de website rechtstreeks openen en de uitkomsten daarna hier invoeren.</p>
    <div class="actions" style="margin:10px 0 14px">
     <button type="button" onclick="copyVehicleToValuation()">↧ Neem voertuiggegevens over</button>
+    <button type="button" class="secondary" onclick="window.open('https://www.dagwaarde.nl/','_blank','noopener')">↗ Open Dagwaarde.nl</button>
    </div>
    <div class="vehiclegrid">
     <label for="valuationPlate">Kenteken</label><input id="valuationPlate" readonly placeholder="Wordt overgenomen uit voertuig">
-    <label for="valuationMileage">Kilometerstand</label><input id="valuationMileage" type="number" min="0" step="1" placeholder="Vul actuele kilometerstand in">
-    <label for="valuationDate">Peildatum waardering</label><input id="valuationDate" type="date">
+    <label for="valuationMileage">Kilometerstand</label><input id="valuationMileage" type="number" min="0" step="1" placeholder="Bijv. 60000">
+    <label for="valuationConsumerPrice">Consumentenprijs incl. opties (€)</label><input id="valuationConsumerPrice" type="number" min="0" step="0.01" placeholder="Bijv. 44199">
+    <label for="dayValue">Dagwaarde / vervangingswaarde (€)</label><input id="dayValue" type="number" min="0" step="0.01" placeholder="Bijv. 28539">
+    <label for="tradeValue">Inruilwaarde (€)</label><input id="tradeValue" type="number" min="0" step="0.01" placeholder="Bijv. 26039">
+    <label for="valuationDate">Datum waardering</label><input id="valuationDate" type="date">
+    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="Dagwaarde.nl" readonly>
+    <label for="valuationNotes">Opmerkingen</label><textarea id="valuationNotes" rows="3" placeholder="Bijvoorbeeld uitvoering, opties of bijzonderheden"></textarea>
    </div>
    <div class="actions" style="margin-top:14px">
-    <button type="button" onclick="requestAutotelexValuation()">↻ Waardering ophalen</button>
-    <button type="button" class="secondary" onclick="saveValuation()">✓ Waardering opslaan in dossier</button>
+    <button type="button" onclick="saveValuation()">✓ Waardering opslaan in dossier</button>
     <button type="button" class="secondary" onclick="clearValuation()">Waardering wissen</button>
    </div>
-   <div class="result" id="valuationResult" aria-live="polite">Autotelex-koppeling voorbereid. API-testtoegang en een beveiligde tussenserver moeten nog worden geactiveerd.</div>
-   <div class="vehiclegrid" style="margin-top:12px">
-    <label for="valuationConsumerPrice">Consumentenprijs incl. opties (€)</label><input id="valuationConsumerPrice" type="number" readonly>
-    <label for="dayValue">Dagwaarde / vervangingswaarde (€)</label><input id="dayValue" type="number" readonly>
-    <label for="tradeValue">Inruilwaarde (€)</label><input id="tradeValue" type="number" readonly>
-    <label for="valuationWholesale">Handelswaarde (€)</label><input id="valuationWholesale" type="number" readonly>
-    <label for="valuationRetail">Verkoopwaarde (€)</label><input id="valuationRetail" type="number" readonly>
-    <label for="valuationSource">Waarderingsbron</label><input id="valuationSource" value="Autotelex – nog niet geactiveerd" readonly>
-    <label for="valuationNotes">Opmerkingen</label><textarea id="valuationNotes" rows="3" placeholder="Optionele opmerkingen"></textarea>
-   </div>
-   <p class="hint">De automatische waardering werkt pas nadat Autotelex een testaccount, rechten en de juiste API-specificatie heeft verstrekt. API-sleutels worden uitsluitend op de beveiligde tussenserver opgeslagen, nooit in deze webpagina.</p>
+   <div class="result" id="valuationResult" aria-live="polite">Vul de waardes van Dagwaarde.nl in en sla ze op in het voertuigdossier.</div>
+   <p class="hint">Let op: de bedragen worden handmatig ingevoerd en zijn afkomstig van jouw eigen raadpleging bij Dagwaarde.nl. VVA haalt deze bedragen niet automatisch op en controleert ze niet onafhankelijk.</p>
   </div>
  </div>
 </section>
@@ -343,7 +339,7 @@ function chooseReport(name,price){
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationWholesale','valuationRetail','valuationNotes'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationNotes'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
 
@@ -964,119 +960,92 @@ async function getOsmFuelStations(){
   return {name:x.tags?.name||x.tags?.brand||'Tankstation',type:'fuel',lat,lon,tags:x.tags||{},distance:haversineKm(energyPoint,{lat,lon})};
  }).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,12);
 }
+async function getOsmChargingStations(){
+ const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';
+ const query='[out:json][timeout:25];(node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];relation'+around+'[amenity=charging_station];);out center tags;';
+ const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));
+ if(!r.ok)throw Error('OpenStreetMap antwoordde met HTTP '+r.status);
+ const data=await r.json();
+ return (data.elements||[]).map(x=>{
+  const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;
+  if(lat==null||lon==null)return null;
+  const tags=x.tags||{};
+  return {name:tags.name||tags.operator||'Openbaar laadpunt',operator:tags.operator||'',address:[tags['addr:street'],tags['addr:housenumber'],tags['addr:postcode'],tags['addr:city']].filter(Boolean).join(', '),lat:Number(lat),lon:Number(lon),type:'charging_station',tags,power:tags.capacity||tags['socket:type2']||'',connectors:Object.keys(tags).filter(k=>k.startsWith('socket:')).join(', '),price:null,distance:haversineKm(energyPoint,{lat:Number(lat),lon:Number(lon)}),source:'OpenStreetMap'};
+ }).filter(x=>x&&x.distance<=10).sort((a,b)=>a.distance-b.distance);
+}
 async function searchEnergyNearby(){
  clearEnergyResults('Nieuwe locaties en prijzen worden opgehaald…');
  if(!energyPoint){$('energyStatus').textContent='Kies eerst GPS of zoek een plaats/postcode.';return}
  updateEnergyVehicleHint();
- $('energyStatus').textContent='Tankstations en laadpunten worden opgehaald…';
+ $('energyStatus').textContent='Laadpunten binnen 10 km worden uit meerdere bronnen gecombineerd…';
  const fuel=(v('fuel')||'').toLowerCase(),isElectric=fuel.includes('elektr')||fuel.includes('electric');
  try{
-  let items=[],sourceLabel='';
+  let items=[],sources=[],errors=[];
   if(isElectric){
-   // NDW is nu de primaire bron: Google beperkt Nearby Search tot een kleine selectie en kan laadpunten overslaan.
-   let ndwItems=[];
-   try{ndwItems=await getNdwChargingStations(1000);sourceLabel='NDW DOT-NL';}catch(ndwError){$('energyStatus').textContent='NDW is tijdelijk niet bereikbaar. We proberen Google Maps als aanvullende bron.';}
-   try{
-    const googleItems=await searchGoogleChargingStations();
-    if(ndwItems.length){
-     for(const g of googleItems){
-      const duplicate=ndwItems.some(n=>haversineKm({lat:g.lat,lon:g.lon},{lat:n.lat,lon:n.lon})<0.15);
-      if(!duplicate)ndwItems.push({...g,source:'Google Maps'});
-     }
-     sourceLabel='NDW DOT-NL + Google Maps';
-    }else{ndwItems=googleItems;sourceLabel='Google Maps (NDW niet beschikbaar)';}
-   }catch(googleError){if(!ndwItems.length)throw googleError;}
-   items=ndwItems.sort((a,b)=>a.distance-b.distance).slice(0,50);
-   if(!items.length){
-    const around='(around:10000,'+energyPoint.lat+','+energyPoint.lon+')';
-    const query='[out:json][timeout:25];(node'+around+'[amenity=charging_station];way'+around+'[amenity=charging_station];);out center tags;';
-    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(query));if(!r.ok)throw Error('NDW, Google Maps en OpenStreetMap zijn tijdelijk niet beschikbaar.');
-    const d=await r.json();items=(d.elements||[]).map(x=>{const lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;if(lat==null||lon==null)return null;return {name:x.tags?.name||'Laadpunt',type:'charging_station',lat,lon,tags:x.tags||{},address:[x.tags?.['addr:street'],x.tags?.['addr:housenumber'],x.tags?.['addr:postcode'],x.tags?.['addr:city']].filter(Boolean).join(', '),distance:haversineKm(energyPoint,{lat,lon}),price:null,power:x.tags?.capacity||x.tags?.socket||'',source:'OpenStreetMap'};}).filter(Boolean).sort((a,b)=>a.distance-b.distance).slice(0,50);sourceLabel='OpenStreetMap (terugval)';
+   // Alle bronnen worden altijd geprobeerd. Een bron met resultaten mag de andere
+   // bronnen niet blokkeren: juist lokale laadpunten kunnen in één dataset ontbreken.
+   const results=await Promise.allSettled([
+    getNdwChargingStations(1000),
+    searchGoogleChargingStations(),
+    getOsmChargingStations()
+   ]);
+   const names=['NDW DOT-NL','Google Maps','OpenStreetMap'];
+   results.forEach((result,index)=>{
+    if(result.status==='fulfilled'){
+     if(result.value.length){sources.push(names[index]);items.push(...result.value.map(x=>({...x,source:x.source||names[index]})));}
+    }else errors.push(names[index]+': '+(result.reason?.message||'niet beschikbaar'));
+   });
+   // Dedupeer binnen circa 100 meter, behoud de rijkste record (adres, vermogen, prijs).
+   items.sort((a,b)=>{
+    const score=x=>(x.address?3:0)+(x.operator?2:0)+(x.power?2:0)+(x.price?2:0)+(x.connectors?1:0);
+    return score(b)-score(a)||a.distance-b.distance;
+   });
+   const unique=[];
+   for(const item of items){
+    const duplicate=unique.find(x=>haversineKm({lat:x.lat,lon:x.lon},{lat:item.lat,lon:item.lon})<0.10);
+    if(!duplicate)unique.push(item);
+    else{
+     if(!duplicate.address&&item.address)duplicate.address=item.address;
+     if(!duplicate.operator&&item.operator)duplicate.operator=item.operator;
+     if(!duplicate.power&&item.power)duplicate.power=item.power;
+     if(!duplicate.price&&item.price)duplicate.price=item.price;
+     if(!duplicate.connectors&&item.connectors)duplicate.connectors=item.connectors;
+     duplicate.source=(duplicate.source||'')+' + '+(item.source||'');
+    }
    }
-  }else{items=await getOsmFuelStations();sourceLabel='OpenStreetMap';}
+   items=unique.sort((a,b)=>a.distance-b.distance).slice(0,100);
+   if(!items.length)throw Error('Geen laadpunten gevonden binnen 10 km. '+errors.join(' · '));
+  }else{
+   items=await getOsmFuelStations();sources.push('OpenStreetMap');
+  }
   if(!items.length){$('energyStatus').textContent='Geen passende locaties gevonden binnen 10 km. Probeer een andere locatie.';return}
-  $('energyStatus').textContent=items.length+' locaties gevonden binnen 10 km · bron: '+sourceLabel+'.';
+  const sourceLabel=sources.join(' + ')||'Openbare gegevens';
+  $('energyStatus').textContent=items.length+' laadpunten gevonden binnen 10 km · bronnen: '+sourceLabel+'. Dichtstbijzijnde staan bovenaan.'+(errors.length?' Niet beschikbaar: '+errors.join(' · '):'');
   const mapSearchUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((isElectric?'laadstations':'tankstations')+' near '+energyPoint.lat+','+energyPoint.lon);
   $('energyResults').innerHTML='<div style="margin-bottom:6px"><a class="button secondary" href="'+mapSearchUrl+'" target="_blank" rel="noopener">Bekijk alle '+(isElectric?'laadstations':'tankstations')+' in Google Maps</a></div>'+items.map(x=>{
    const tags=x.tags||{};
-   const address=x.address||[tags['addr:street'],tags['addr:housenumber']].filter(Boolean).join(' ')+([tags['addr:postcode'],tags['addr:city']].filter(Boolean).length?', '+[tags['addr:postcode'],tags['addr:city']].filter(Boolean).join(' '):'');
-   const details=isElectric?[
-    x.operator||tags.operator?'Exploitant: '+(x.operator||tags.operator):'',
-    x.power?'Vermogen: '+x.power+' kW':(tags.capacity?'Vermogen: '+tags.capacity:'Vermogen niet vermeld'),
-    x.connectors||tags.socket||tags['socket:type2']?'Aansluiting: '+(x.connectors||tags.socket||'Type 2'):''
-   ].filter(Boolean).join(' · '):[
-    tags.brand?'Merk: '+tags.brand:'',
-    tags.fuel?'Brandstoffen: '+tags.fuel:'',
-    tags.opening_hours?'Openingstijden: '+tags.opening_hours:'',
-    tags.automated==='yes'?'Onbemand':''
-   ].filter(Boolean).join(' · ');
-   const url='https://www.google.com/maps/dir/?api=1&destination='+x.lat+','+x.lon+'&travelmode=driving';
-   const placeUrl=x.googleMapsURI||('https://www.google.com/maps/search/?api=1&query='+x.lat+','+x.lon);
-   const priceMarkup=isElectric?'<div class="charging-card-price" style="margin:8px 0;font-weight:800;color:#14532d">'+formatEnergyPrice(x.price)+(x.price?' · bron: NDW DOT-NL':' · tarief niet gepubliceerd')+'</div>':'';
-   return '<article class="result energy-card '+(isElectric?'charging-card':'fuel-card')+'" style="padding:12px"><b>'+esc(x.name)+'</b><div class="hint">'+x.distance.toFixed(1)+' km · '+(isElectric?'Laadpunt':'Tankstation')+'</div><div>'+esc(address||'Adres niet beschikbaar in de bron')+'</div><div style="margin-top:6px">'+esc(details||'Aanvullende gegevens niet beschikbaar')+'</div>'+priceMarkup+'<div class="energy-links" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:7px"><a href="'+placeUrl+'" target="_blank" rel="noopener">Adres / locatie in Google Maps</a><a href="'+url+'" target="_blank" rel="noopener">Route in Google Maps</a></div></article>';
+   const address=x.address||[tags['addr:street'],tags['addr:housenumber'],tags['addr:postcode'],tags['addr:city']].filter(Boolean).join(', ')||'Adres niet beschikbaar';
+   const price=x.price?formatEnergyPrice(x.price):'Tarief niet bekend';
+   const distance=Number(x.distance).toFixed(2).replace('.',',')+' km';
+   const maps=x.googleMapsURI||('https://www.google.com/maps/search/?api=1&query='+x.lat+','+x.lon);
+   return '<div class="energy-card charging-card"><b>'+esc(x.name||'Laadpunt')+'</b><div>'+esc(address)+'</div><div>'+esc(x.operator||'')+(x.power?' · '+esc(String(x.power)):'')+'</div><div><b>'+distance+'</b> · '+esc(x.source||'Openbare bron')+'</div><div class="charging-card-price">'+esc(price)+'</div><div class="energy-links"><a href="'+maps+'" target="_blank" rel="noopener">Route / kaart</a></div></div>';
   }).join('');
-  if(isElectric){
-   const withPrice=items.filter(x=>x.price&&Number.isFinite(Number(x.price.amount))).length;
-   $('chargingPriceSummary').style.display='block';
-   $('chargingPriceSummary').innerHTML='<b>Laadprijzen en laadpunten · '+esc(sourceLabel)+'</b><div class="hint">'+withPrice+' van '+items.length+' gevonden laadpunten hebben een door de exploitant gepubliceerd kWh-tarief. De overige punten blijven zichtbaar, ook zonder prijsinformatie. Dit is het exploitantentarief uit de bron en niet automatisch de prijs via iedere laadpas; start- en tijdkosten kunnen apart gelden.</div><a href="https://www.ndw.nu/dataportalen/dot-nl" target="_blank" rel="noopener">Bron: NDW DOT-NL</a>';
-  }else await getFuelPriceSummary();
+  if(isElectric)getChargingPriceSummary();
  }catch(e){
-  $('energyStatus').textContent='De locaties konden niet worden opgehaald ('+e.message+'). Probeer het later opnieuw of open Google Maps.';
-  const base='https://www.google.com/maps/search/?api=1&query=',near=energyPoint.lat+','+energyPoint.lon;
-  const target=isElectric?'laadstations':'tankstations';
-  $('energyResults').innerHTML='<a class="button" href="'+base+encodeURIComponent(target+' near '+near)+'" target="_blank" rel="noopener">Open '+target+' in Google Maps</a>';
-  if(!isElectric)await getFuelPriceSummary();
+  $('energyStatus').textContent='Laadpunten zoeken is niet gelukt: '+e.message;
  }
 }
-
-
 function calcBpm(){return calcBpmFromImport()}
 function calcBpmFromImport(){const gross=n('grossBpm'),dep=n('depreciation');if(!v('grossBpm')||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod')+'<br><small>Indicatieve berekening; controleer tarief en methode.</small>';}
 function calcImport(){const price=n('importPrice'),freight=n('freight'),rate=n('importDuty'),vatRate=n('vatRate')/100,origin=v('importOrigin');if(!price){alert('Vul aankoopprijs in.');return}const base=price+freight,duty=origin==='non-eu'?base*rate/100:0,vat=origin==='non-eu'?(base+duty+n('otherCosts'))*vatRate:0,total=price+freight+duty+vat+n('otherCosts')+n('inland')+n('rdwCosts');$('importResult').innerHTML='Aankoopprijs: '+money(price)+'<br>Transport tot EU-grens: '+money(freight)+'<br>Indicatief invoerrecht: '+money(duty)+'<br>Indicatieve btw: '+money(vat)+'<br>Overige kosten: '+money(n('otherCosts')+n('inland')+n('rdwCosts'))+'<hr><span class="total">Totaal vóór BPM: '+money(total)+'</span><small>Vereenvoudigde indicatie; controleer de wettelijke douane- en btw-grondslag.</small>'}
 function market(site){const q=[v('make'),v('model'),(v('first')||'').slice(0,4),'occasion'].filter(Boolean).join(' ');if(!q){alert('Vul eerst merk en model in of haal RDW-gegevens op.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(q+' site:'+site),'_blank','noopener')}
-/* Configureer na ontvangst van Autotelex-toegang de HTTPS Worker-URL in VVA_AUTOTELEX_ENDPOINT. Laat deze leeg zolang er geen account is. */
-window.VVA_AUTOTELEX_ENDPOINT = window.VVA_AUTOTELEX_ENDPOINT || '';
 function copyVehicleToValuation(){
  $('valuationPlate').value=v('plate');
  if(v('km'))$('valuationMileage').value=v('km');
+ if(v('catalogue'))$('valuationConsumerPrice').value=v('catalogue');
  if(!$('valuationDate').value)$('valuationDate').value=new Date().toISOString().slice(0,10);
- $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Vul of controleer de actuele kilometerstand.';
+ $('valuationResult').textContent='Kenteken en beschikbare voertuiggegevens overgenomen. Vul nu de waardes van Dagwaarde.nl in.';
 }
-async function requestAutotelexValuation(){
- const plate=String(v('valuationPlate')||v('plate')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
- const mileage=Number(v('valuationMileage')||v('km'));
- if(!plate){$('valuationResult').textContent='Vul eerst een kenteken in of neem voertuiggegevens over.';return}
- if(!Number.isFinite(mileage)||mileage<=0){$('valuationResult').textContent='Vul eerst de actuele kilometerstand in.';return}
- const endpoint=window.VVA_AUTOTELEX_ENDPOINT||'';
- if(!endpoint){$('valuationResult').textContent='Nog niet geactiveerd: de beveiligde Autotelex-tussenserver is nog niet gekoppeld. De API-testtoegang ontbreekt nog.';return}
- $('valuationResult').textContent='Autotelex-waardering wordt aangevraagd…';
- try{
-  const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plate,mileage,valuationDate:v('valuationDate')||new Date().toISOString().slice(0,10)})});
-  const payload=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(payload.error||('HTTP '+response.status));
-  const values=payload.values||payload;
-  const setMoney=(id,value)=>{if(value!==null&&value!==undefined&&value!=='')$(id).value=Number(value)};
-  setMoney('valuationConsumerPrice',values.consumerPrice);
-  setMoney('dayValue',values.replacementValue??values.dayValue);
-  setMoney('tradeValue',values.tradeValue);
-  setMoney('valuationWholesale',values.wholesaleValue);
-  setMoney('valuationRetail',values.retailValue);
-  $('valuationSource').value=payload.source||'Autotelex';
-  $('valuationResult').textContent='Waardering ontvangen. Controleer de waarden en sla ze daarna op in het dossier.';
- }catch(error){$('valuationResult').textContent='Waardering niet opgehaald: '+error.message+'. Controleer de API-toegang en tussenserver.'}
-}
-function saveValuation(){
- if(!v('valuationPlate')&&!v('plate')){alert('Vul eerst een kenteken in of neem de voertuiggegevens over.');return}
- if(!v('dayValue')&&!v('tradeValue')&&!v('valuationWholesale')&&!v('valuationRetail')){alert('Er zijn nog geen waarderingsgegevens ontvangen. Haal eerst een waardering op.');return}
- if(!v('valuationPlate'))$('valuationPlate').value=v('plate');
- if(!$('valuationDate').value)$('valuationDate').value=new Date().toISOString().slice(0,10);
- const d=getData(),i=dossiers.findIndex(x=>x.id===d.id);
- if(i<0)dossiers.push(d);else dossiers[i]=d;
- currentId=d.id;localStorage.setItem('vva_check_dossiers',JSON.stringify(dossiers));renderDossiers();
- $('valuationResult').textContent='Waardering opgeslagen in dossier.';
-}
-function clearValuation(){['valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationWholesale','valuationRetail','valuationDate','valuationNotes'].forEach(id=>$(id).value='');$('valuationSource').value='Autotelex – nog niet geactiveerd';$('valuationResult').textContent='Waarderingsvelden gewist.';}
-
 function saveValuation(){
  if(!v('valuationPlate')&&!v('plate')){alert('Vul eerst een kenteken in of neem de voertuiggegevens over.');return}
  if(!v('dayValue')&&!v('tradeValue')){alert('Vul minimaal de dagwaarde of inruilwaarde in.');return}
