@@ -269,7 +269,7 @@ textarea{min-height:75px}
  <div class="panel card">
   <div class="cardhead">⚡ EV Check – batterij, actieradius &amp; gebruikskosten</div>
   <div class="cardbody">
-   <p class="hint">Voer de batterijgegevens handmatig in. VVA maakt onderscheid tussen opgegeven referentiecapaciteit, gemeten capaciteit en ingevoerde SOH. Er wordt geen batterijdiagnose uitgevoerd en ontbrekende waarden worden niet geschat.</p>
+   <p class="hint">Voer de batterijgegevens handmatig in. VVA maakt onderscheid tussen opgegeven referentiecapaciteit, gemeten capaciteit en ingevoerde SOH. Als referentie- en gemeten capaciteit zijn ingevuld, berekent VVA aanvullend een indicatieve SOH. Dit vervangt geen onafhankelijke batterijdiagnose.</p>
    <div class="actions" style="margin:10px 0 14px"><button type="button" class="secondary" onclick="copyVehicleToEv()">↧ Neem voertuiggegevens over</button></div>
    <h3>Batterijgegevens</h3>
    <div class="vehiclegrid">
@@ -1044,18 +1044,22 @@ function copyVehicleToEv(){
  $('evResult').textContent='Beschikbare voertuiggegevens overgenomen. Controleer of de waarden bij deze uitvoering horen; vul batterijmetingen handmatig aan.';
 }
 function calculateEvCheck(){
- const soh=v('evSoh')===''?null:n('evSoh'), ref=n('evReferenceKwh'), measured=n('evMeasuredKwh');
- if(soh!==null&&(soh<0||soh>100)){alert('SOH moet tussen 0 en 100 procent liggen.');return}
- if(ref>0&&measured>0&&measured>ref*1.2){alert('Controleer de capaciteit: de gemeten waarde lijkt hoger dan de referentiecapaciteit.');return}
+ const soh=v('evSoh')===''?null:Number(v('evSoh')), ref=n('evReferenceKwh'), measured=n('evMeasuredKwh');
+ if(soh!==null&&(!Number.isFinite(soh)||soh<0||soh>100)){alert('SOH moet tussen 0 en 100 procent liggen.');return}
+ if(ref>0&&measured>0&&measured>ref*1.2){alert('Controleer de capaciteit: de gemeten waarde is meer dan 120% van de referentiecapaciteit. Controleer of beide waarden dezelfde definitie gebruiken.');return}
  const out=[];
+ const derivedSoh=(ref>0&&measured>0)?(measured/ref*100):null;
  if(soh!==null)out.push('Ingevoerde SOH: <b>'+soh.toLocaleString('nl-NL')+'%</b>');
  if(ref>0)out.push('Referentie bruikbare capaciteit: '+ref.toLocaleString('nl-NL')+' kWh');
  if(measured>0)out.push('Gemeten resterende capaciteit: <b>'+measured.toLocaleString('nl-NL')+' kWh</b>');
- if(soh!==null&&ref>0)out.push('Capaciteit op basis van referentie × SOH: '+(ref*soh/100).toLocaleString('nl-NL',{maximumFractionDigits:1})+' kWh (rekenkundige afleiding, geen meting)');
+ if(derivedSoh!==null)out.push('Berekende SOH op basis van capaciteit: <b>'+derivedSoh.toLocaleString('nl-NL',{maximumFractionDigits:1})+'%</b> (rekenkundige indicatie, geen onafhankelijke batterijtest)');
+ if(derivedSoh!==null&&derivedSoh>100)out.push('<b>Controlepunt:</b> berekende SOH is hoger dan 100%. Controleer of referentie- en meetcapaciteit dezelfde definitie en meetmethode gebruiken.')
+ if(soh!==null&&ref>0)out.push('Capaciteit op basis van referentie × ingevoerde SOH: '+(ref*soh/100).toLocaleString('nl-NL',{maximumFractionDigits:1})+' kWh (rekenkundige afleiding, geen meting)');
+ if(soh!==null&&derivedSoh!==null&&Math.abs(soh-derivedSoh)>=5)out.push('<b>Controlepunt:</b> ingevoerde SOH en uit capaciteit berekende SOH verschillen minimaal 5 procentpunt. Controleer meetmethode en referentiecapaciteit.');
  if(v('evWltp'))out.push('WLTP-actieradius: '+n('evWltp')+' km'); if(v('evRealRange'))out.push('Praktische actieradius: '+n('evRealRange')+' km');
  if(v('evConsumption'))out.push('Ingevoerd verbruik: '+n('evConsumption')+' kWh/100 km');
  if(!out.length){$('evResult').textContent='Vul minimaal één batterij- of actieradiusgegeven in.';return}
- $('evResult').innerHTML=out.join('<br>')+'<hr><small>Bron: '+(v('evTestSource')||'niet opgegeven')+(v('evTestDate')?' · controledatum '+v('evTestDate'):'')+'. VVA heeft de batterij niet zelfstandig getest; resultaten zijn gebaseerd op jouw invoer.</small>';
+ $('evResult').innerHTML=out.join('<br>')+'<hr><small>Bron: '+(v('evTestSource')?esc(v('evTestSource')):'niet opgegeven')+(v('evTestDate')?' · controledatum '+esc(v('evTestDate')):'')+'. VVA heeft de batterij niet zelfstandig getest; resultaten zijn gebaseerd op jouw invoer.</small>';
 }
 function calculateEvCosts(){
  const kwh=n('evConsumption'),ep=n('evElectricityPrice'),litres=n('evPetrolConsumption'),pp=n('evPetrolPrice'),annual=n('evAnnualKm');
