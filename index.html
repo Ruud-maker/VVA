@@ -269,12 +269,13 @@ textarea{min-height:75px}
  <div class="panel card">
   <div class="cardhead">⚡ EV Check – batterij, actieradius &amp; gebruikskosten</div>
   <div class="cardbody">
-   <p class="hint">Voer de batterijgegevens handmatig in. VVA maakt onderscheid tussen opgegeven referentiecapaciteit, gemeten capaciteit en ingevoerde SOH. Als referentie- en gemeten capaciteit zijn ingevuld, berekent VVA aanvullend een indicatieve SOH. Dit vervangt geen onafhankelijke batterijdiagnose.</p>
+   <p class="hint">VVA vult beschikbare voertuig- en EV-gegevens automatisch aan vanuit RDW en VIN-decoding. Accucapaciteit, gemeten resterende capaciteit en SOH moeten handmatig worden ingevoerd op basis van fabrikantdocumentatie of een batterijrapport. VVA maakt onderscheid tussen opgegeven referentiecapaciteit, gemeten capaciteit en ingevoerde SOH. Als referentie- en gemeten capaciteit zijn ingevuld, berekent VVA aanvullend een indicatieve SOH. Dit vervangt geen onafhankelijke batterijdiagnose.</p>
    <div class="actions" style="margin:10px 0 14px"><button type="button" class="secondary" onclick="copyVehicleToEv()">↧ Neem voertuiggegevens over</button></div>
    <h3>Batterijgegevens</h3>
    <div class="vehiclegrid">
     <label for="evPlate">Kenteken</label><input id="evPlate" readonly placeholder="Neem over uit voertuig">
     <label for="evMileage">Kilometerstand</label><input id="evMileage" type="number" min="0" step="1" placeholder="km">
+    <label for="evMotorPower">Elektrisch motorvermogen (kW)</label><input id="evMotorPower" type="number" min="0" step="0.1" placeholder="Automatisch indien RDW-gegevens beschikbaar">
     <label for="evReferenceKwh">Referentie bruikbare capaciteit (kWh)</label><input id="evReferenceKwh" type="number" min="0" step="0.1" placeholder="Volgens fabrikant / documentatie">
     <label for="evMeasuredKwh">Gemeten resterende capaciteit (kWh)</label><input id="evMeasuredKwh" type="number" min="0" step="0.1" placeholder="Uit batterijdiagnose">
     <label for="evSoh">Batterijgezondheid SOH (%)</label><input id="evSoh" type="number" min="0" max="100" step="0.1" placeholder="Handmatig gemeten / gerapporteerd">
@@ -284,7 +285,7 @@ textarea{min-height:75px}
     <label for="evAcPower">AC-laadvermogen (kW)</label><input id="evAcPower" type="number" min="0" step="0.1" placeholder="kW">
     <label for="evDcPower">DC-laadvermogen (kW)</label><input id="evDcPower" type="number" min="0" step="0.1" placeholder="kW">
     <label for="evTestDate">Datum batterijcontrole</label><input id="evTestDate" type="date">
-    <label for="evTestSource">Bron batterijgegevens</label><select id="evTestSource"><option value="">Selecteer bron</option><option>Diagnoserapport</option><option>Dealer / fabrikant</option><option>Eigen meting</option><option>Opgegeven door verkoper</option><option>Anders / onbekend</option></select>
+    <label for="evTestSource">Bron batterijgegevens</label><select id="evTestSource"><option value="">Selecteer bron</option><option>Diagnoserapport</option><option>RDW Open Data</option><option>VIN-decoder (NHTSA)</option><option>Dealer / fabrikant</option><option>Eigen meting</option><option>Opgegeven door verkoper</option><option>Anders / onbekend</option></select>
     <label for="evNotes">Opmerkingen</label><textarea id="evNotes" rows="3" placeholder="Meetmethode, omstandigheden en bijzonderheden"></textarea>
    </div>
    <div class="actions" style="margin-top:12px"><button type="button" onclick="calculateEvCheck()">Bereken EV-overzicht</button><button type="button" class="secondary" onclick="clearEvCheck()">EV-velden wissen</button></div>
@@ -338,7 +339,7 @@ textarea{min-height:75px}
 <p class="hint" style="text-align:center">VVA Check – Vehicle Valuation Assistant · Altijd een goed inzicht in uw voertuig</p>
 </main>
 <script>
-const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationNotes','evPlate','evMileage','evReferenceKwh','evMeasuredKwh','evSoh','evWltp','evRealRange','evConsumption','evAcPower','evDcPower','evTestDate','evTestSource','evNotes','evElectricityPrice','evAnnualKm','evPetrolConsumption','evPetrolPrice'];
+const ids=['plate','vin','make','model','first','km','category','body','color','fuel','power','epower','battery','range','mass','catalogue','apk','co2','emission','nlfirst','seats','doors','cylinders','displacement','massEmpty','maxMass','towBraked','towUnbraked','length','width','height','wheelbase','euroCategory','vehicleType','regDate','ownersPrivate','ownersBusiness','ownersTotal','grossBpmRdw','fuelCombined','fuelCity','fuelOutside','co2Weighted','emissionCode','electricPower','hybridClass','odometerJudgement','odometerYear','rdwsource','recallsData','purchase','grossBpm','netBpm','taricCode','goodsDescription','dutyRate','measures','origin','importOrigin','importPrice','freight','importDuty','vatRate','otherCosts','inland','rdwCosts','bpmGross2','depreciation','bpmMethod','taricCodeFull','originCountry','taricDescription','taricRate','proof','taricChecked','additionalCode','taricMeasures','valuationPlate','valuationMileage','valuationConsumerPrice','dayValue','tradeValue','valuationDate','valuationSource','valuationNotes','evPlate','evMileage','evMotorPower','evReferenceKwh','evMeasuredKwh','evSoh','evWltp','evRealRange','evConsumption','evAcPower','evDcPower','evTestDate','evTestSource','evNotes','evElectricityPrice','evAnnualKm','evPetrolConsumption','evPetrolPrice'];
 let dossiers=JSON.parse(localStorage.getItem('vva_check_dossiers')||'[]'),currentId=null;
 const $=id=>document.getElementById(id),v=id=>($(id)?.value||'').trim(),n=id=>Math.max(0,Number($(id)?.value)||0);
 
@@ -562,7 +563,12 @@ async function lookupRDW(){
     if(fuelRows.length){
      const f=fuelRows[0];
      setIf('fuel',pick(f,'brandstof_omschrijving'));setIf('power',pick(f,'nettomaximumvermogen'));
-     setIf('electricPower',pick(f,'netto_max_vermogen_elektrisch'));
+     const electricPower=pick(f,'netto_max_vermogen_elektrisch','netto_maximumvermogen_elektrisch');
+     setIf('electricPower',electricPower);setIf('epower',electricPower);
+     // RDW-veldbenamingen kunnen per datasetversie verschillen. Vul alleen
+     // waarden die de bron daadwerkelijk teruggeeft; verzin nooit accudata.
+     const rdwWltpRange=pick(f,'actieradius_elektrisch_wltp','elektrische_actieradius_wltp','wltp_actieradius','actieradius_elektrisch');
+     setIf('range',rdwWltpRange);
      setIf('fuelCombined',pick(f,'brandstofverbruik_gecombineerd'));
      setIf('fuelCity',pick(f,'brandstofverbruik_stad'));setIf('fuelOutside',pick(f,'brandstofverbruik_buiten'));
      setIf('co2',pick(f,'co2_uitstoot_gecombineerd','emissie_co2_gecombineerd_wltp'));
@@ -575,7 +581,8 @@ async function lookupRDW(){
   }catch(fuelError){fuelNote='Brandstofdataset niet bereikbaar'}
   if(requestId!==rdwLookupSequence)return;
   $('rdwsource').value='RDW Open Data – basis + brandstof';
-  $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Terugroepacties worden apart gecontroleerd met de knop hieronder.';
+  autoFillEvFromVehicle('RDW Open Data');
+  $('status').textContent='RDW-gegevens opgehaald. '+fuelNote+'. Beschikbare EV-gegevens zijn automatisch overgenomen; accucapaciteit en batterijgezondheid zijn niet in RDW Open Data beschikbaar en blijven handmatig. Terugroepacties worden apart gecontroleerd met de knop hieronder.';
   await updateVehiclePhoto();if(requestId!==rdwLookupSequence)return;saveLastVehicle();await lookupRecalls();
  }catch(e){
   if(requestId!==rdwLookupSequence)return;
@@ -659,7 +666,8 @@ async function checkVIN(){
    status.textContent='De VIN-database heeft dit chassisnummer herkend, maar geen merk of model teruggegeven. Dit komt voor bij sommige Europese voertuigen.';
    return;
   }
-  status.textContent='VIN-opvraag voltooid. '+[x.Make,x.Model,year].filter(has).join(' ')+' ingevuld waar beschikbaar. Controleer de gegevens; Europese voertuiggegevens kunnen beperkt zijn.';updateEnergyVehicleHint();saveLastVehicle();await updateVehiclePhoto();
+  autoFillEvFromVehicle('VIN-decoder (NHTSA)');
+  status.textContent='VIN-opvraag voltooid. '+[x.Make,x.Model,year].filter(has).join(' ')+' ingevuld waar beschikbaar. Beschikbare EV-gegevens zijn overgenomen; controleer de gegevens. Europese voertuiggegevens en batterijgegevens kunnen beperkt zijn.';updateEnergyVehicleHint();saveLastVehicle();await updateVehiclePhoto();
  }catch(error){
   status.textContent='VIN-opvraag mislukt: '+(error&&error.message?error.message:'verbinding met VIN-database niet beschikbaar')+'. Probeer het later opnieuw of vul de gegevens handmatig in.';
  }
@@ -1038,10 +1046,19 @@ function calcBpm(){return calcBpmFromImport()}
 function calcBpmFromImport(){const gross=n('grossBpm'),dep=n('depreciation');if(!v('grossBpm')||!v('depreciation')){alert('Vul bruto BPM en afschrijving in.');return}if(dep>100){alert('Afschrijving kan niet hoger zijn dan 100%.');return}const net=gross*(1-dep/100);$('netBpm').value=money(net);$('bpmDetail').innerHTML='<b>Resterende BPM: '+money(net)+'</b><br>Bruto BPM: '+money(gross)+'<br>Afschrijving ('+dep+'%): '+money(gross-net)+'<br>Methode: '+v('bpmMethod')+'<br><small>Indicatieve berekening; controleer tarief en methode.</small>';}
 function calcImport(){const price=n('importPrice'),freight=n('freight'),rate=n('importDuty'),vatRate=n('vatRate')/100,origin=v('importOrigin');if(!price){alert('Vul aankoopprijs in.');return}const base=price+freight,duty=origin==='non-eu'?base*rate/100:0,vat=origin==='non-eu'?(base+duty+n('otherCosts'))*vatRate:0,total=price+freight+duty+vat+n('otherCosts')+n('inland')+n('rdwCosts');$('importResult').innerHTML='Aankoopprijs: '+money(price)+'<br>Transport tot EU-grens: '+money(freight)+'<br>Indicatief invoerrecht: '+money(duty)+'<br>Indicatieve btw: '+money(vat)+'<br>Overige kosten: '+money(n('otherCosts')+n('inland')+n('rdwCosts'))+'<hr><span class="total">Totaal vóór BPM: '+money(total)+'</span><small>Vereenvoudigde indicatie; controleer de wettelijke douane- en btw-grondslag.</small>'}
 function market(site){const q=[v('make'),v('model'),(v('first')||'').slice(0,4),'occasion'].filter(Boolean).join(' ');if(!q){alert('Vul eerst merk en model in of haal RDW-gegevens op.');return}window.open('https://www.google.com/search?q='+encodeURIComponent(q+' site:'+site),'_blank','noopener')}
+function autoFillEvFromVehicle(source='RDW Open Data'){
+ // Vul EV-velden automatisch, maar overschrijf nooit eerder handmatig ingevoerde waarden.
+ const copyIfBlank=(target,sourceId)=>{const value=v(sourceId);if($(target)&&!v(target)&&value!=='')$(target).value=value};
+ if(v('plate'))$('evPlate').value=v('plate');
+ copyIfBlank('evMileage','km');copyIfBlank('evWltp','range');
+ copyIfBlank('evMotorPower','epower');
+ if(!$('evTestSource').value){const option=[...$('evTestSource').options].find(o=>o.value==='RDW Open Data');if(option)$('evTestSource').value='RDW Open Data';}
+ const notes='Automatisch overgenomen uit '+source+'. Accucapaciteit (kWh), gemeten resterende capaciteit en SOH zijn niet betrouwbaar beschikbaar via de gebruikte openbare RDW/VIN-bronnen; vul deze uitsluitend in op basis van fabrikantdocumentatie of een batterijrapport.';
+ if(!$('evNotes').value)$('evNotes').value=notes;
+}
 function copyVehicleToEv(){
- $('evPlate').value=v('plate'); if(v('km'))$('evMileage').value=v('km');
- if(v('range'))$('evWltp').value=v('range'); if(v('epower'))$('evDcPower').value=v('epower');
- $('evResult').textContent='Beschikbare voertuiggegevens overgenomen. Controleer of de waarden bij deze uitvoering horen; vul batterijmetingen handmatig aan.';
+ autoFillEvFromVehicle('voertuiggegevens in VVA');
+ $('evResult').textContent='Beschikbare voertuiggegevens overgenomen. Bestaande handmatige EV-invoer is behouden. Vul accucapaciteit en batterijmetingen aan met fabrikantdocumentatie of een batterijrapport.';
 }
 function calculateEvCheck(){
  const soh=v('evSoh')===''?null:Number(v('evSoh')), ref=n('evReferenceKwh'), measured=n('evMeasuredKwh');
@@ -1056,6 +1073,7 @@ function calculateEvCheck(){
  if(derivedSoh!==null&&derivedSoh>100)out.push('<b>Controlepunt:</b> berekende SOH is hoger dan 100%. Controleer of referentie- en meetcapaciteit dezelfde definitie en meetmethode gebruiken.')
  if(soh!==null&&ref>0)out.push('Capaciteit op basis van referentie × ingevoerde SOH: '+(ref*soh/100).toLocaleString('nl-NL',{maximumFractionDigits:1})+' kWh (rekenkundige afleiding, geen meting)');
  if(soh!==null&&derivedSoh!==null&&Math.abs(soh-derivedSoh)>=5)out.push('<b>Controlepunt:</b> ingevoerde SOH en uit capaciteit berekende SOH verschillen minimaal 5 procentpunt. Controleer meetmethode en referentiecapaciteit.');
+ if(v('evMotorPower'))out.push('Elektrisch motorvermogen: '+n('evMotorPower')+' kW');
  if(v('evWltp'))out.push('WLTP-actieradius: '+n('evWltp')+' km'); if(v('evRealRange'))out.push('Praktische actieradius: '+n('evRealRange')+' km');
  if(v('evConsumption'))out.push('Ingevoerd verbruik: '+n('evConsumption')+' kWh/100 km');
  if(!out.length){$('evResult').textContent='Vul minimaal één batterij- of actieradiusgegeven in.';return}
@@ -1069,7 +1087,7 @@ function calculateEvCosts(){
  if(annual>0)html+='<hr>Indicatief per jaar ('+annual.toLocaleString('nl-NL')+' km):<br>Elektrisch: '+money(ev*annual/100)+'<br>Benzine: '+money(petrol*annual/100)+'<br>Verschil: <b>'+money(Math.abs(diff)*annual/100)+'</b>';
  $('evCostResult').innerHTML=html+'<br><small>Gebaseerd op uitsluitend de ingevulde prijzen en verbruiken; geen rekening gehouden met laadverlies, onderhoud, belasting of vaste kosten.</small>';
 }
-function clearEvCheck(){['evPlate','evMileage','evReferenceKwh','evMeasuredKwh','evSoh','evWltp','evRealRange','evConsumption','evAcPower','evDcPower','evTestDate','evTestSource','evNotes','evElectricityPrice','evAnnualKm','evPetrolConsumption','evPetrolPrice'].forEach(id=>{if($(id))$(id).value=''});$('evResult').textContent='EV-velden gewist.';$('evCostResult').textContent='Vul verbruik, energieprijzen en eventueel jaarkilometrage in.';}
+function clearEvCheck(){['evPlate','evMileage','evMotorPower','evReferenceKwh','evMeasuredKwh','evSoh','evWltp','evRealRange','evConsumption','evAcPower','evDcPower','evTestDate','evTestSource','evNotes','evElectricityPrice','evAnnualKm','evPetrolConsumption','evPetrolPrice'].forEach(id=>{if($(id))$(id).value=''});$('evResult').textContent='EV-velden gewist.';$('evCostResult').textContent='Vul verbruik, energieprijzen en eventueel jaarkilometrage in.';}
 function copyVehicleToValuation(){
  $('valuationPlate').value=v('plate');
  if(v('km'))$('valuationMileage').value=v('km');
