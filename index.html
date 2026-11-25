@@ -1,3 +1,4 @@
+html
 <html lang="nl"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#0756a5" name="theme-color"/><title>VVA Check – Vehicle Valuation Assistant</title>
 <style>
@@ -476,17 +477,31 @@ async function getPlateOcrWorker(){
  }}).then(async worker=>{await worker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',preserve_interword_spaces:'1'});return worker;});
  return plateOcrWorkerPromise;
 }
-function preparePlateImage(file){
+function preparePlateImages(file){
  return new Promise((resolve,reject)=>{
   const url=URL.createObjectURL(file),img=new Image();
   img.onload=()=>{try{
-   const scale=Math.min(2.5,2200/Math.max(img.naturalWidth,img.naturalHeight));
-   const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*scale);canvas.height=Math.round(img.naturalHeight*scale);
-   const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,canvas.width,canvas.height);
-   // Verhoog contrast en maak de foto grijswaarden voor betere OCR-herkenning.
-   const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
-   for(let i=0;i<d.length;i+=4){const gray=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);const value=Math.max(0,Math.min(255,(gray-115)*1.35+128));d[i]=d[i+1]=d[i+2]=value;}
-   ctx.putImageData(pixels,0,0);URL.revokeObjectURL(url);resolve(canvas);
+   const makeCanvas=(sx,sy,sw,sh,maxWidth,thresholdMode=false)=>{
+    const cropW=Math.round(img.naturalWidth*sw),cropH=Math.round(img.naturalHeight*sh);
+    const scale=Math.min(3.2,maxWidth/cropW);
+    const canvas=document.createElement('canvas');canvas.width=Math.round(cropW*scale);canvas.height=Math.round(cropH*scale);
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.drawImage(img,Math.round(img.naturalWidth*sx),Math.round(img.naturalHeight*sy),cropW,cropH,0,0,canvas.width,canvas.height);
+    const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
+    for(let i=0;i<d.length;i+=4){
+     const gray=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
+     // Sterk contrast; de extra drempelvariant helpt bij zwarte tekens op een gele plaat.
+     const value=thresholdMode?(gray<155?0:255):Math.max(0,Math.min(255,(gray-118)*1.65+128));
+     d[i]=d[i+1]=d[i+2]=value;
+    }
+    ctx.putImageData(pixels,0,0);return canvas;
+   };
+   // Kentekenplaten zitten meestal onderaan en ongeveer in het midden.
+   // Eerst een sterk vergrote uitsnede lezen; daarna de volledige foto als terugvaloptie.
+   const focused=makeCanvas(0.10,0.54,0.82,0.38,2400,false);
+   const focusedBinary=makeCanvas(0.10,0.54,0.82,0.38,2400,true);
+   const full=makeCanvas(0,0,1,1,1800,false);
+   URL.revokeObjectURL(url);resolve([focused,focusedBinary,full]);
   }catch(e){URL.revokeObjectURL(url);reject(e)}};
   img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('De afbeelding kon niet worden geopend.'))};img.src=url;
  });
@@ -498,13 +513,19 @@ async function readPlatePhoto(input){
  if(file.size>15*1024*1024){status.textContent='Deze foto is groter dan 15 MB. Kies een kleinere foto.';return}
  status.textContent='OCR wordt voorbereid… Eerste keer kan het downloaden van de gratis taalgegevens even duren.';
  try{
-  const canvas=await preparePlateImage(file),worker=await getPlateOcrWorker();
-  const result=await worker.recognize(canvas),raw=result.data.text||'';
-  const tokens=raw.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-  const candidates=tokens.map(t=>t.replace(/[^A-Z0-9]/g,'')).filter(t=>t.length===6);
-  // Soms leest OCR een spatie midden in het kenteken; probeer ook opeenvolgende tekstregels.
-  const joined=cleanPlate(raw),joinedMatch=joined.match(/[A-Z0-9]{6}/g)||[];
-  const all=[...candidates,...joinedMatch].filter((x,i,a)=>a.indexOf(x)===i);
+  const canvases=await preparePlateImages(file),worker=await getPlateOcrWorker();
+  const all=[];
+  // Meerdere gerichte OCR-pogingen: vergrote uitsnede, hoog-contrastvariant en volledige foto.
+  for(let i=0;i<canvases.length;i++){
+   await worker.setParameters({tessedit_pageseg_mode:i===2?'11':'7'});
+   const result=await worker.recognize(canvases[i]),raw=result.data.text||'';
+   const tokens=raw.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+   const candidates=tokens.map(t=>t.replace(/[^A-Z0-9]/g,'')).filter(t=>t.length===6);
+   const joined=cleanPlate(raw),joinedMatch=joined.match(/[A-Z0-9]{6}/g)||[];
+   [...candidates,...joinedMatch].forEach(x=>{if(!all.includes(x))all.push(x)});
+   // Stop zodra een plausibele zes-teken kandidaat uit de kentekenuitsnede komt.
+   if(i===0&&candidates.length)break;
+  }
   if(!all.length){status.textContent='Geen duidelijk Nederlands kenteken herkend. Probeer een scherpere foto, recht van voren en met weinig reflectie. Je kunt het kenteken ook handmatig invoeren.';return}
   const candidate=all[0];$('plate').value=candidate;
   status.innerHTML='Herkend kenteken: <b>'+esc(candidate)+'</b>. Controleer de letters en cijfers hierboven en druk daarna op “RDW-gegevens opvragen”.'+(all.length>1?' Mogelijke alternatieven: '+all.slice(1,4).map(esc).join(', '):'');
