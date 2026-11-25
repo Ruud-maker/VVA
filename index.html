@@ -460,6 +460,19 @@ function showTab(id,btn){document.querySelectorAll('.tabpane').forEach(x=>x.clas
 function set(id,value){if(value!==undefined&&value!==null&&value!=='')$(id).value=value}
 function dateValue(x){if(!x)return '';let s=String(x);if(/^\d{8}$/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);return ''}
 function cleanPlate(x){return x.toUpperCase().replace(/[^A-Z0-9]/g,'')}
+// Accepteer alleen bekende Nederlandse kentekenpatronen; willekeurige woorden
+// zoals AURORE mogen nooit automatisch in het kentekenveld terechtkomen.
+function isDutchPlateCandidate(value){
+ const x=cleanPlate(value);
+ const patterns=[
+  /^[A-Z]{2}[0-9]{3}[A-Z]$/, /^[A-Z]{3}[0-9]{2}[A-Z]$/,
+  /^[0-9]{2}[A-Z]{3}[0-9]$/, /^[0-9]{2}[A-Z]{2}[0-9]{2}$/,
+  /^[A-Z]{2}[0-9]{2}[A-Z]{2}$/, /^[A-Z]{2}[A-Z]{2}[0-9]{2}$/,
+  /^[0-9]{2}[0-9]{2}[A-Z]{2}$/, /^[0-9][A-Z]{3}[0-9]{2}$/,
+  /^[A-Z]{2}[0-9]{3}[A-Z]{1}$/
+ ];
+ return patterns.some(re=>re.test(x));
+}
 
 // Gratis kentekenherkenning in de browser met Tesseract.js (geen betaalde OCR/API).
 let plateOcrWorkerPromise=null;
@@ -519,15 +532,15 @@ async function readPlatePhoto(input){
    await worker.setParameters({tessedit_pageseg_mode:i===2?'11':'7'});
    const result=await worker.recognize(canvases[i]),raw=result.data.text||'';
    const tokens=raw.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-   const candidates=tokens.map(t=>t.replace(/[^A-Z0-9]/g,'')).filter(t=>t.length===6);
    const joined=cleanPlate(raw),joinedMatch=joined.match(/[A-Z0-9]{6}/g)||[];
-   [...candidates,...joinedMatch].forEach(x=>{if(!all.includes(x))all.push(x)});
-   // Stop zodra een plausibele zes-teken kandidaat uit de kentekenuitsnede komt.
+   const candidates=[...tokens,...joinedMatch].map(cleanPlate).filter(isDutchPlateCandidate);
+   candidates.forEach(x=>{if(!all.includes(x))all.push(x)});
+   // Alleen stoppen als de uitsnede een bekend Nederlands kentekenpatroon oplevert.
    if(i===0&&candidates.length)break;
   }
-  if(!all.length){status.textContent='Geen duidelijk Nederlands kenteken herkend. Probeer een scherpere foto, recht van voren en met weinig reflectie. Je kunt het kenteken ook handmatig invoeren.';return}
+  if(!all.length){$('plate').value='';status.textContent='Geen geldig Nederlands kentekenpatroon herkend. Er wordt bewust niets ingevuld om fouten zoals AURORE te voorkomen. Maak een foto dichter bij de plaat, recht van voren en met weinig reflectie, of voer het kenteken handmatig in.';return}
   const candidate=all[0];$('plate').value=candidate;
-  status.innerHTML='Herkend kenteken: <b>'+esc(candidate)+'</b>. Controleer de letters en cijfers hierboven en druk daarna op “RDW-gegevens opvragen”.'+(all.length>1?' Mogelijke alternatieven: '+all.slice(1,4).map(esc).join(', '):'');
+  status.innerHTML='Mogelijk kenteken: <b>'+esc(candidate)+'</b>. Controleer dit altijd op de foto voordat je op “RDW-gegevens opvragen” drukt.'+(all.length>1?' Andere geldige patroonmatches: '+all.slice(1,4).map(esc).join(', '):'');
  }catch(e){status.textContent='Kentekenherkenning is niet gelukt: '+(e.message||'onbekende fout')+'. Je kunt het kenteken handmatig invoeren.';}
 }
 
