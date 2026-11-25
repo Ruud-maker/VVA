@@ -1,3 +1,4 @@
+html
 <html lang="nl"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#0756a5" name="theme-color"/><title>VVA Check – Vehicle Valuation Assistant</title>
 <style>
@@ -67,6 +68,13 @@ textarea{min-height:75px}
 <main>
 <section class="panel lookup">
 <div class="lookupgroup"><div><label for="plate">🚘 Kenteken (NL)</label><div class="nl-plate" aria-label="Nederlands geel kenteken"><div class="nl-plate-eu"><span class="nl-eu-stars">✦</span><span class="nl-eu-country">NL</span></div><input autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" id="plate" maxlength="8" placeholder="XX-123-X" aria-label="Vul Nederlands kenteken in"/></div></div><button onclick="lookupRDW()">⌕ RDW-gegevens opvragen</button></div>
+<div class="lookupgroup" style="grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+ <button type="button" class="secondary" onclick="document.getElementById('plateCameraInput').click()">📷 Foto maken van kenteken</button>
+ <button type="button" class="secondary" onclick="document.getElementById('plateUploadInput').click()">🖼️ Foto uploaden</button>
+ <input id="plateCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="readPlatePhoto(this)"/>
+ <input id="plateUploadInput" type="file" accept="image/*" style="display:none" onchange="readPlatePhoto(this)"/>
+</div>
+<div id="plateOcrStatus" class="hint" style="grid-column:1/-1;margin-top:5px" aria-live="polite">Maak een duidelijke foto waarop het volledige kenteken goed zichtbaar is. De herkenning gebeurt gratis in je browser.</div>
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
@@ -453,6 +461,56 @@ function showTab(id,btn){document.querySelectorAll('.tabpane').forEach(x=>x.clas
 function set(id,value){if(value!==undefined&&value!==null&&value!=='')$(id).value=value}
 function dateValue(x){if(!x)return '';let s=String(x);if(/^\d{8}$/.test(s))return s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);return ''}
 function cleanPlate(x){return x.toUpperCase().replace(/[^A-Z0-9]/g,'')}
+
+// Gratis kentekenherkenning in de browser met Tesseract.js (geen betaalde OCR/API).
+let plateOcrWorkerPromise=null;
+async function getPlateOcrWorker(){
+ if(!window.Tesseract){
+  await new Promise((resolve,reject)=>{
+   const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+   script.onload=resolve;script.onerror=()=>reject(new Error('De gratis OCR-bibliotheek kon niet worden geladen. Controleer je internetverbinding.'));
+   document.head.appendChild(script);
+  });
+ }
+ if(!plateOcrWorkerPromise)plateOcrWorkerPromise=window.Tesseract.createWorker('eng',1,{logger:m=>{
+  const el=$('plateOcrStatus');if(el&&m.status==='recognizing text')el.textContent='Kentekenfoto wordt gelezen… '+Math.round((m.progress||0)*100)+'%';
+ }}).then(async worker=>{await worker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',preserve_interword_spaces:'1'});return worker;});
+ return plateOcrWorkerPromise;
+}
+function preparePlateImage(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{try{
+   const scale=Math.min(2.5,2200/Math.max(img.naturalWidth,img.naturalHeight));
+   const canvas=document.createElement('canvas');canvas.width=Math.round(img.naturalWidth*scale);canvas.height=Math.round(img.naturalHeight*scale);
+   const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,canvas.width,canvas.height);
+   // Verhoog contrast en maak de foto grijswaarden voor betere OCR-herkenning.
+   const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
+   for(let i=0;i<d.length;i+=4){const gray=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114);const value=Math.max(0,Math.min(255,(gray-115)*1.35+128));d[i]=d[i+1]=d[i+2]=value;}
+   ctx.putImageData(pixels,0,0);URL.revokeObjectURL(url);resolve(canvas);
+  }catch(e){URL.revokeObjectURL(url);reject(e)}};
+  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('De afbeelding kon niet worden geopend.'))};img.src=url;
+ });
+}
+async function readPlatePhoto(input){
+ const file=input.files&&input.files[0];input.value='';if(!file)return;
+ const status=$('plateOcrStatus');
+ if(!file.type.startsWith('image/')){status.textContent='Kies een afbeeldingsbestand.';return}
+ if(file.size>15*1024*1024){status.textContent='Deze foto is groter dan 15 MB. Kies een kleinere foto.';return}
+ status.textContent='OCR wordt voorbereid… Eerste keer kan het downloaden van de gratis taalgegevens even duren.';
+ try{
+  const canvas=await preparePlateImage(file),worker=await getPlateOcrWorker();
+  const result=await worker.recognize(canvas),raw=result.data.text||'';
+  const tokens=raw.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  const candidates=tokens.map(t=>t.replace(/[^A-Z0-9]/g,'')).filter(t=>t.length===6);
+  // Soms leest OCR een spatie midden in het kenteken; probeer ook opeenvolgende tekstregels.
+  const joined=cleanPlate(raw),joinedMatch=joined.match(/[A-Z0-9]{6}/g)||[];
+  const all=[...candidates,...joinedMatch].filter((x,i,a)=>a.indexOf(x)===i);
+  if(!all.length){status.textContent='Geen duidelijk Nederlands kenteken herkend. Probeer een scherpere foto, recht van voren en met weinig reflectie. Je kunt het kenteken ook handmatig invoeren.';return}
+  const candidate=all[0];$('plate').value=candidate;
+  status.innerHTML='Herkend kenteken: <b>'+esc(candidate)+'</b>. Controleer de letters en cijfers hierboven en druk daarna op “RDW-gegevens opvragen”.'+(all.length>1?' Mogelijke alternatieven: '+all.slice(1,4).map(esc).join(', '):'');
+ }catch(e){status.textContent='Kentekenherkenning is niet gelukt: '+(e.message||'onbekende fout')+'. Je kunt het kenteken handmatig invoeren.';}
+}
 
 let vehiclePhotoRequest=0;
 function clearVehiclePhoto(){
