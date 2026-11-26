@@ -493,27 +493,34 @@ function preparePlateImages(file){
  return new Promise((resolve,reject)=>{
   const url=URL.createObjectURL(file),img=new Image();
   img.onload=()=>{try{
-   const makeCanvas=(sx,sy,sw,sh,maxWidth,thresholdMode=false)=>{
+   const makeCanvas=(sx,sy,sw,sh,maxWidth,mode='contrast')=>{
     const cropW=Math.round(img.naturalWidth*sw),cropH=Math.round(img.naturalHeight*sh);
-    const scale=Math.min(3.2,maxWidth/cropW);
-    const canvas=document.createElement('canvas');canvas.width=Math.round(cropW*scale);canvas.height=Math.round(cropH*scale);
+    const scale=Math.min(4.5,maxWidth/cropW);
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(cropW*scale));canvas.height=Math.max(1,Math.round(cropH*scale));
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.drawImage(img,Math.round(img.naturalWidth*sx),Math.round(img.naturalHeight*sy),cropW,cropH,0,0,canvas.width,canvas.height);
     const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
     for(let i=0;i<d.length;i+=4){
      const gray=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
-     // Sterk contrast; de extra drempelvariant helpt bij zwarte tekens op een gele plaat.
-     const value=thresholdMode?(gray<155?0:255):Math.max(0,Math.min(255,(gray-118)*1.65+128));
+     let value=gray;
+     if(mode==='contrast')value=Math.max(0,Math.min(255,(gray-105)*1.8+128));
+     else if(mode==='binary')value=gray<145?0:255;
+     else if(mode==='bright')value=Math.max(0,Math.min(255,(gray-80)*1.55+145));
      d[i]=d[i+1]=d[i+2]=value;
     }
     ctx.putImageData(pixels,0,0);return canvas;
    };
-   // Kentekenplaten zitten meestal onderaan en ongeveer in het midden.
-   // Eerst een sterk vergrote uitsnede lezen; daarna de volledige foto als terugvaloptie.
-   const focused=makeCanvas(0.10,0.54,0.82,0.38,2400,false);
-   const focusedBinary=makeCanvas(0.10,0.54,0.82,0.38,2400,true);
-   const full=makeCanvas(0,0,1,1,1800,false);
-   URL.revokeObjectURL(url);resolve([focused,focusedBinary,full]);
+   // Maak aparte uitsneden van de zone waar een achterkenteken doorgaans staat.
+   // De smallere uitsneden voorkomen dat logo's, ramen en gevels de OCR afleiden.
+   const images=[
+    makeCanvas(0.20,0.60,0.62,0.24,2600,'contrast'),
+    makeCanvas(0.20,0.60,0.62,0.24,2600,'binary'),
+    makeCanvas(0.12,0.55,0.76,0.34,2400,'contrast'),
+    makeCanvas(0.12,0.55,0.76,0.34,2400,'bright'),
+    makeCanvas(0,0.48,1,0.42,2200,'contrast')
+   ];
+   URL.revokeObjectURL(url);resolve(images);
   }catch(e){URL.revokeObjectURL(url);reject(e)}};
   img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('De afbeelding kon niet worden geopend.'))};img.src=url;
  });
@@ -523,24 +530,33 @@ async function readPlatePhoto(input){
  const status=$('plateOcrStatus');
  if(!file.type.startsWith('image/')){status.textContent='Kies een afbeeldingsbestand.';return}
  if(file.size>15*1024*1024){status.textContent='Deze foto is groter dan 15 MB. Kies een kleinere foto.';return}
- status.textContent='OCR wordt voorbereid… Eerste keer kan het downloaden van de gratis taalgegevens even duren.';
+ status.textContent='Kentekenplaat wordt gericht gezocht…';
  try{
   const canvases=await preparePlateImages(file),worker=await getPlateOcrWorker();
-  const all=[];
-  // Meerdere gerichte OCR-pogingen: vergrote uitsnede, hoog-contrastvariant en volledige foto.
+  const votes=new Map();
+  // Lees meerdere uitsneden en tekstsegmentatiemodi; verzamel stemmen in plaats van
+  // direct de eerste toevallige patroonmatch (zoals WW177S) over te nemen.
   for(let i=0;i<canvases.length;i++){
-   await worker.setParameters({tessedit_pageseg_mode:i===2?'11':'7'});
-   const result=await worker.recognize(canvases[i]),raw=result.data.text||'';
-   const tokens=raw.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-   const joined=cleanPlate(raw),joinedMatch=joined.match(/[A-Z0-9]{6}/g)||[];
-   const candidates=[...tokens,...joinedMatch].map(cleanPlate).filter(isDutchPlateCandidate);
-   candidates.forEach(x=>{if(!all.includes(x))all.push(x)});
-   // Alleen stoppen als de uitsnede een bekend Nederlands kentekenpatroon oplevert.
-   if(i===0&&candidates.length)break;
+   for(const psm of ['7','8','13']){
+    await worker.setParameters({tessedit_pageseg_mode:psm});
+    const result=await worker.recognize(canvases[i]),raw=(result.data.text||'').toUpperCase();
+    const tokens=raw.split(/[^A-Z0-9]+/).filter(Boolean);
+    const joined=cleanPlate(raw),joinedMatches=joined.match(/[A-Z0-9]{6}/g)||[];
+    const candidates=[...tokens,...joinedMatches].map(cleanPlate).filter(isDutchPlateCandidate);
+    for(const candidate of new Set(candidates)){
+     const old=votes.get(candidate)||{count:0,weight:0};
+     old.count++;old.weight+=i<2?3:(i<4?2:1);votes.set(candidate,old);
+    }
+   }
+   status.textContent='Kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/canvases.length*100)+'%';
   }
-  if(!all.length){$('plate').value='';status.textContent='Geen geldig Nederlands kentekenpatroon herkend. Er wordt bewust niets ingevuld om fouten zoals AURORE te voorkomen. Maak een foto dichter bij de plaat, recht van voren en met weinig reflectie, of voer het kenteken handmatig in.';return}
-  const candidate=all[0];$('plate').value=candidate;
-  status.innerHTML='Mogelijk kenteken: <b>'+esc(candidate)+'</b>. Controleer dit altijd op de foto voordat je op “RDW-gegevens opvragen” drukt.'+(all.length>1?' Andere geldige patroonmatches: '+all.slice(1,4).map(esc).join(', '):'');
+  const ranked=[...votes.entries()].sort((a,b)=>b[1].weight-a[1].weight||b[1].count-a[1].count);
+  if(!ranked.length){$('plate').value='';status.textContent='Geen betrouwbaar Nederlands kenteken herkend. Maak een foto dichter bij de kentekenplaat, recht van voren en zonder reflectie, of voer het kenteken handmatig in.';return}
+  const [candidate,score]=ranked[0];
+  // Bij een gelijke of zwakke uitslag vullen we niets automatisch in.
+  if(score.count<2){$('plate').value='';status.textContent='De foto geeft geen eenduidige herkenning. De mogelijke tekst is onzeker; voer het kenteken handmatig in of maak een close-up van alleen de plaat.';return}
+  $('plate').value=candidate;
+  status.innerHTML='Mogelijk kenteken: <b>'+esc(candidate)+'</b>. Controleer de tekens op de foto voordat je op “RDW-gegevens opvragen” drukt.';
  }catch(e){status.textContent='Kentekenherkenning is niet gelukt: '+(e.message||'onbekende fout')+'. Je kunt het kenteken handmatig invoeren.';}
 }
 
