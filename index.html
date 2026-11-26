@@ -77,7 +77,7 @@ textarea{min-height:75px}
 <div id="plateCropPanel" class="panel" style="display:none;margin:8px 0;padding:12px;grid-column:1/-1">
  <b>✂️ Selecteer de kentekenplaat</b>
  <p class="hint" style="margin:5px 0 10px">Sleep met je vinger of muis een kader om alleen de gele kentekenplaat. Maak het kader zo strak mogelijk, inclusief alle letters en cijfers.</p>
- <div style="width:100%;overflow:hidden;border-radius:10px;background:#111;touch-action:none"><canvas id="plateCropCanvas" style="display:block;width:100%;height:auto;touch-action:none;cursor:crosshair"></canvas></div>
+ <div style="width:100%;overflow:hidden;border-radius:10px;background:#111;touch-action:none;overscroll-behavior:contain"><canvas id="plateCropCanvas" style="display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;cursor:crosshair"></canvas></div>
  <div class="actions" style="margin-top:10px"><button type="button" onclick="recognizeSelectedPlate()">✓ Herken kenteken in kader</button><button type="button" class="secondary" onclick="cancelPlateCrop()">Annuleren</button></div>
 </div>
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
@@ -519,10 +519,18 @@ function drawPlateCrop(){
 function cropPointerPos(e){const c=$('plateCropCanvas'),r=c.getBoundingClientRect();return {x:Math.max(0,Math.min(c.width,(e.clientX-r.left)*c.width/r.width)),y:Math.max(0,Math.min(c.height,(e.clientY-r.top)*c.height/r.height))};}
 function initPlateCropCanvas(){
  const c=$('plateCropCanvas');if(!c||c.dataset.bound)return;c.dataset.bound='1';
- c.addEventListener('pointerdown',e=>{if(!plateCropImage)return;e.preventDefault();c.setPointerCapture(e.pointerId);plateCropDrag=cropPointerPos(e);plateCropRect={x:plateCropDrag.x,y:plateCropDrag.y,w:1,h:1};drawPlateCrop();});
- c.addEventListener('pointermove',e=>{if(!plateCropDrag)return;const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();});
- const finish=e=>{if(!plateCropDrag)return;const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};plateCropDrag=null;drawPlateCrop();};
- c.addEventListener('pointerup',finish);c.addEventListener('pointercancel',finish);
+ // iPhone/Safari: voorkom dat een sleepbeweging op het canvas de hele pagina laat scrollen.
+ c.style.touchAction='none';c.style.webkitUserSelect='none';c.style.userSelect='none';
+ const panel=$('plateCropPanel');if(panel){panel.style.touchAction='pan-y';panel.style.overscrollBehavior='contain';}
+ const begin=e=>{if(!plateCropImage)return;e.preventDefault();plateCropDrag=cropPointerPos(e);plateCropRect={x:plateCropDrag.x,y:plateCropDrag.y,w:1,h:1};try{if(c.setPointerCapture&&e.pointerId!==undefined)c.setPointerCapture(e.pointerId);}catch(_){}drawPlateCrop();};
+ const move=e=>{if(!plateCropDrag)return;e.preventDefault();const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();};
+ const finish=e=>{if(!plateCropDrag)return;if(e&&e.cancelable)e.preventDefault();if(e&&typeof e.clientX==='number'){const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};}plateCropDrag=null;drawPlateCrop();};
+ c.addEventListener('pointerdown',begin,{passive:false});c.addEventListener('pointermove',move,{passive:false});
+ c.addEventListener('pointerup',finish,{passive:false});c.addEventListener('pointercancel',finish,{passive:false});
+ // Fallback voor Safari-versies die touch-scrolling toch aan de pagina doorgeven.
+ c.addEventListener('touchstart',e=>{if(!plateCropImage||!e.touches.length)return;e.preventDefault();const t=e.touches[0],q=cropPointerPos(t);plateCropDrag=q;plateCropRect={x:q.x,y:q.y,w:1,h:1};drawPlateCrop();},{passive:false});
+ c.addEventListener('touchmove',e=>{if(!plateCropDrag||!e.touches.length)return;e.preventDefault();const q=cropPointerPos(e.touches[0]);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();},{passive:false});
+ c.addEventListener('touchend',e=>{if(!plateCropDrag)return;if(e.cancelable)e.preventDefault();plateCropDrag=null;drawPlateCrop();},{passive:false});
 }
 async function readPlatePhoto(input){
  const file=input.files&&input.files[0];input.value='';if(!file)return;const status=$('plateOcrStatus');
