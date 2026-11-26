@@ -77,7 +77,16 @@ textarea{min-height:75px}
 <div id="plateCropPanel" class="panel" style="display:none;margin:8px 0;padding:12px;grid-column:1/-1">
  <b>✂️ Selecteer de kentekenplaat</b>
  <p class="hint" style="margin:5px 0 10px">Sleep met je vinger of muis een kader om alleen de gele kentekenplaat. Maak het kader zo strak mogelijk, inclusief alle letters en cijfers.</p>
- <div style="width:100%;overflow:hidden;border-radius:10px;background:#111;touch-action:none;overscroll-behavior:contain"><canvas id="plateCropCanvas" style="display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;cursor:crosshair"></canvas></div>
+ <div class="actions" style="margin:8px 0;gap:8px;align-items:center;flex-wrap:wrap">
+  <button type="button" class="secondary" onclick="zoomPlateCrop(0.75)" aria-label="Uitzoomen">−</button>
+  <button type="button" class="secondary" onclick="resetPlateCropZoom()">100% / passend</button>
+  <button type="button" class="secondary" onclick="zoomPlateCrop(1.35)" aria-label="Inzoomen">+</button>
+  <button type="button" class="secondary" onclick="setPlateCropMode('draw')">Kader tekenen</button>
+  <button type="button" class="secondary" onclick="setPlateCropMode('pan')">Foto verschuiven</button>
+  <span id="plateZoomLabel" class="hint">Zoom 100% · kader tekenen</span>
+ </div>
+ <p class="hint" style="margin:4px 0 8px">Zoom in met + en schuif daarna de foto binnen het venster. Trek vervolgens een strak kader om de kentekenplaat.</p>
+ <div id="plateCropViewport" style="width:100%;max-height:62vh;overflow:auto;border-radius:10px;background:#111;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch"><canvas id="plateCropCanvas" style="display:block;width:100%;height:auto;touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none;cursor:crosshair"></canvas></div>
  <div class="actions" style="margin-top:10px"><button type="button" onclick="recognizeSelectedPlate()">✓ Herken kenteken in kader</button><button type="button" class="secondary" onclick="cancelPlateCrop()">Annuleren</button></div>
 </div>
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
@@ -505,12 +514,30 @@ async function getPlateOcrWorker(){
  }}).then(async worker=>{await worker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',preserve_interword_spaces:'1'});return worker;});
  return plateOcrWorkerPromise;
 }
-let plateCropImage=null,plateCropObjectUrl=null,plateCropDrag=null,plateCropRect=null,plateCropScale=1;
+let plateCropImage=null,plateCropObjectUrl=null,plateCropDrag=null,plateCropRect=null,plateCropScale=1,plateCropZoom=1,plateCropPanMode=false;
 function cancelPlateCrop(){
  const panel=$('plateCropPanel');if(panel)panel.style.display='none';
+ plateCropZoom=1;
  if(plateCropObjectUrl){URL.revokeObjectURL(plateCropObjectUrl);plateCropObjectUrl=null;}
  plateCropImage=null;plateCropRect=null;plateCropDrag=null;
 }
+function applyPlateCropZoom(){
+ const canvas=$('plateCropCanvas');if(!canvas)return;
+ canvas.style.width=(plateCropZoom*100)+'%';
+ const label=$('plateZoomLabel');if(label)label.textContent='Zoom '+Math.round(plateCropZoom*100)+'% · '+(plateCropPanMode?'foto verschuiven':'kader tekenen');
+}
+function setPlateCropMode(mode){
+ plateCropPanMode=mode==='pan';plateCropDrag=null;
+ const canvas=$('plateCropCanvas');if(canvas)canvas.style.touchAction=plateCropPanMode?'pan-x pan-y':'none';
+ applyPlateCropZoom();
+}
+function zoomPlateCrop(factor){
+ if(!plateCropImage)return;
+ plateCropZoom=Math.max(1,Math.min(4,plateCropZoom*factor));
+ if(plateCropZoom>1)setPlateCropMode('pan');else setPlateCropMode('draw');
+ applyPlateCropZoom();
+}
+function resetPlateCropZoom(){plateCropZoom=1;setPlateCropMode('draw');applyPlateCropZoom();const view=$('plateCropViewport');if(view){view.scrollLeft=0;view.scrollTop=0;}}
 function drawPlateCrop(){
  const canvas=$('plateCropCanvas');if(!canvas||!plateCropImage)return;
  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(plateCropImage,0,0,canvas.width,canvas.height);
@@ -522,22 +549,22 @@ function initPlateCropCanvas(){
  // iPhone/Safari: voorkom dat een sleepbeweging op het canvas de hele pagina laat scrollen.
  c.style.touchAction='none';c.style.webkitUserSelect='none';c.style.userSelect='none';
  const panel=$('plateCropPanel');if(panel){panel.style.touchAction='pan-y';panel.style.overscrollBehavior='contain';}
- const begin=e=>{if(!plateCropImage)return;e.preventDefault();plateCropDrag=cropPointerPos(e);plateCropRect={x:plateCropDrag.x,y:plateCropDrag.y,w:1,h:1};try{if(c.setPointerCapture&&e.pointerId!==undefined)c.setPointerCapture(e.pointerId);}catch(_){}drawPlateCrop();};
- const move=e=>{if(!plateCropDrag)return;e.preventDefault();const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();};
- const finish=e=>{if(!plateCropDrag)return;if(e&&e.cancelable)e.preventDefault();if(e&&typeof e.clientX==='number'){const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};}plateCropDrag=null;drawPlateCrop();};
+ const begin=e=>{if(!plateCropImage||plateCropPanMode)return;e.preventDefault();plateCropDrag=cropPointerPos(e);plateCropRect={x:plateCropDrag.x,y:plateCropDrag.y,w:1,h:1};try{if(c.setPointerCapture&&e.pointerId!==undefined)c.setPointerCapture(e.pointerId);}catch(_){}drawPlateCrop();};
+ const move=e=>{if(!plateCropDrag||plateCropPanMode)return;e.preventDefault();const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();};
+ const finish=e=>{if(!plateCropDrag||plateCropPanMode)return;if(e&&e.cancelable)e.preventDefault();if(e&&typeof e.clientX==='number'){const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};}plateCropDrag=null;drawPlateCrop();};
  c.addEventListener('pointerdown',begin,{passive:false});c.addEventListener('pointermove',move,{passive:false});
  c.addEventListener('pointerup',finish,{passive:false});c.addEventListener('pointercancel',finish,{passive:false});
  // Fallback voor Safari-versies die touch-scrolling toch aan de pagina doorgeven.
- c.addEventListener('touchstart',e=>{if(!plateCropImage||!e.touches.length)return;e.preventDefault();const t=e.touches[0],q=cropPointerPos(t);plateCropDrag=q;plateCropRect={x:q.x,y:q.y,w:1,h:1};drawPlateCrop();},{passive:false});
- c.addEventListener('touchmove',e=>{if(!plateCropDrag||!e.touches.length)return;e.preventDefault();const q=cropPointerPos(e.touches[0]);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();},{passive:false});
- c.addEventListener('touchend',e=>{if(!plateCropDrag)return;if(e.cancelable)e.preventDefault();plateCropDrag=null;drawPlateCrop();},{passive:false});
+ c.addEventListener('touchstart',e=>{if(!plateCropImage||plateCropPanMode||!e.touches.length)return;e.preventDefault();const t=e.touches[0],q=cropPointerPos(t);plateCropDrag=q;plateCropRect={x:q.x,y:q.y,w:1,h:1};drawPlateCrop();},{passive:false});
+ c.addEventListener('touchmove',e=>{if(!plateCropDrag||plateCropPanMode||!e.touches.length)return;e.preventDefault();const q=cropPointerPos(e.touches[0]);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();},{passive:false});
+ c.addEventListener('touchend',e=>{if(!plateCropDrag||plateCropPanMode)return;if(e.cancelable)e.preventDefault();plateCropDrag=null;drawPlateCrop();},{passive:false});
 }
 async function readPlatePhoto(input){
  const file=input.files&&input.files[0];input.value='';if(!file)return;const status=$('plateOcrStatus');
  if(!file.type.startsWith('image/')){status.textContent='Kies een afbeeldingsbestand.';return}
  if(file.size>15*1024*1024){status.textContent='Deze foto is groter dan 15 MB. Kies een kleinere foto.';return}
  cancelPlateCrop();status.textContent='Foto wordt geopend. Teken daarna een kader om alleen de kentekenplaat.';
- try{plateCropObjectUrl=URL.createObjectURL(file);const img=new Image();img.onload=()=>{plateCropImage=img;const c=$('plateCropCanvas');plateCropScale=Math.min(1,1100/img.naturalWidth);c.width=Math.round(img.naturalWidth*plateCropScale);c.height=Math.round(img.naturalHeight*plateCropScale);plateCropRect=null;initPlateCropCanvas();$('plateCropPanel').style.display='block';drawPlateCrop();status.textContent='Trek nu een kader om alleen de kentekenplaat.';};img.onerror=()=>{status.textContent='De afbeelding kon niet worden geopend.';cancelPlateCrop();};img.src=plateCropObjectUrl;}
+ try{plateCropObjectUrl=URL.createObjectURL(file);const img=new Image();img.onload=()=>{plateCropImage=img;const c=$('plateCropCanvas');plateCropScale=Math.min(1,1100/img.naturalWidth);plateCropZoom=1;plateCropPanMode=false;c.width=Math.round(img.naturalWidth*plateCropScale);c.height=Math.round(img.naturalHeight*plateCropScale);plateCropRect=null;initPlateCropCanvas();$('plateCropPanel').style.display='block';setPlateCropMode('draw');applyPlateCropZoom();drawPlateCrop();status.textContent='Trek nu een kader om alleen de kentekenplaat.';};img.onerror=()=>{status.textContent='De afbeelding kon niet worden geopend.';cancelPlateCrop();};img.src=plateCropObjectUrl;}
  catch(e){status.textContent='De foto kon niet worden geopend: '+(e.message||'onbekende fout');cancelPlateCrop();}
 }
 async function recognizeSelectedPlate(){
@@ -548,8 +575,8 @@ async function recognizeSelectedPlate(){
   const sx=Math.round(r.x/plateCropScale),sy=Math.round(r.y/plateCropScale),sw=Math.round(r.w/plateCropScale),sh=Math.round(r.h/plateCropScale);
   const base=document.createElement('canvas');base.width=Math.max(1,sw);base.height=Math.max(1,sh);base.getContext('2d').drawImage(plateCropImage,sx,sy,sw,sh,0,0,sw,sh);
   const variants=[];for(const mode of ['normal','contrast','binary']){const v=document.createElement('canvas'),scale=Math.min(5,Math.max(2,1800/base.width));v.width=Math.round(base.width*scale);v.height=Math.round(base.height*scale);const x=v.getContext('2d',{willReadFrequently:true});x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(base,0,0,v.width,v.height);if(mode!=='normal'){const im=x.getImageData(0,0,v.width,v.height),d=im.data;for(let i=0;i<d.length;i+=4){const g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;const z=mode==='binary'?(g<150?0:255):Math.max(0,Math.min(255,(g-105)*2+128));d[i]=d[i+1]=d[i+2]=z;}x.putImageData(im,0,0);}variants.push(v);}
-  const worker=await getPlateOcrWorker(),votes=new Map();
-  for(let i=0;i<variants.length;i++){await worker.setParameters({tessedit_pageseg_mode:'7'});const out=await worker.recognize(variants[i]);const raw=(out.data.text||'').toUpperCase();const candidates=extractDutchPlateCandidates(raw);for(const item of candidates)votes.set(item,(votes.get(item)||0)+1);status.textContent='Geselecteerde kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/variants.length*100)+'%';}
+  const worker=await getPlateOcrWorker(),votes=new Map();let pass=0;
+  for(let i=0;i<variants.length;i++){for(const psm of ['7','8','6']){await worker.setParameters({tessedit_pageseg_mode:psm});const out=await worker.recognize(variants[i]);const raw=(out.data.text||'').toUpperCase();const candidates=extractDutchPlateCandidates(raw);for(const item of candidates){const confidence=Number(out.data.confidence)||0;votes.set(item,(votes.get(item)||0)+1+confidence/100);}pass++;status.textContent='Kentekenplaat wordt gecontroleerd… '+Math.round(pass/9*100)+'%';}}
   const ranked=[...votes.entries()].sort((a,b)=>b[1]-a[1]);
   if(!ranked.length){$('plate').value='';status.textContent='Geen kenteken herkend in het kader. Vergroot het kader zodat de hele plaat erin staat, of maak een scherpere close-up.';return;}
   if(ranked.length>1&&ranked[0][1]===ranked[1][1]){$('plate').value='';status.textContent='De herkenning is niet eenduidig. Pas het kader aan of voer het kenteken handmatig in.';return;}
