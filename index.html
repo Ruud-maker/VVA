@@ -74,6 +74,12 @@ textarea{min-height:75px}
  <input id="plateUploadInput" type="file" accept="image/*" style="display:none" onchange="readPlatePhoto(this)"/>
 </div>
 <div id="plateOcrStatus" class="hint" style="grid-column:1/-1;margin-top:5px" aria-live="polite">Maak een duidelijke foto waarop het volledige kenteken goed zichtbaar is. De herkenning gebeurt gratis in je browser.</div>
+<div id="plateCropPanel" class="panel" style="display:none;margin:8px 0;padding:12px;grid-column:1/-1">
+ <b>✂️ Selecteer de kentekenplaat</b>
+ <p class="hint" style="margin:5px 0 10px">Sleep met je vinger of muis een kader om alleen de gele kentekenplaat. Maak het kader zo strak mogelijk, inclusief alle letters en cijfers.</p>
+ <div style="width:100%;overflow:hidden;border-radius:10px;background:#111;touch-action:none"><canvas id="plateCropCanvas" style="display:block;width:100%;height:auto;touch-action:none;cursor:crosshair"></canvas></div>
+ <div class="actions" style="margin-top:10px"><button type="button" onclick="recognizeSelectedPlate()">✓ Herken kenteken in kader</button><button type="button" class="secondary" onclick="cancelPlateCrop()">Annuleren</button></div>
+</div>
 <div class="lookupgroup"><div><label for="vin">▥ VIN / Chassisnummer</label><input id="vin" placeholder="17 tekens (VIN)"/></div><button type="button" onclick="checkVIN()">✓ VIN-gegevens ophalen</button></div>
 <div class="status" id="status" style="grid-column:1/-1">Vul een kenteken in om RDW-voertuiggegevens op te halen.</div>
 </section>
@@ -489,74 +495,47 @@ async function getPlateOcrWorker(){
  }}).then(async worker=>{await worker.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',preserve_interword_spaces:'1'});return worker;});
  return plateOcrWorkerPromise;
 }
-function preparePlateImages(file){
- return new Promise((resolve,reject)=>{
-  const url=URL.createObjectURL(file),img=new Image();
-  img.onload=()=>{try{
-   const makeCanvas=(sx,sy,sw,sh,maxWidth,mode='contrast')=>{
-    const cropW=Math.round(img.naturalWidth*sw),cropH=Math.round(img.naturalHeight*sh);
-    const scale=Math.min(4.5,maxWidth/cropW);
-    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(cropW*scale));canvas.height=Math.max(1,Math.round(cropH*scale));
-    const ctx=canvas.getContext('2d',{willReadFrequently:true});
-    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-    ctx.drawImage(img,Math.round(img.naturalWidth*sx),Math.round(img.naturalHeight*sy),cropW,cropH,0,0,canvas.width,canvas.height);
-    const pixels=ctx.getImageData(0,0,canvas.width,canvas.height),d=pixels.data;
-    for(let i=0;i<d.length;i+=4){
-     const gray=d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114;
-     let value=gray;
-     if(mode==='contrast')value=Math.max(0,Math.min(255,(gray-105)*1.8+128));
-     else if(mode==='binary')value=gray<145?0:255;
-     else if(mode==='bright')value=Math.max(0,Math.min(255,(gray-80)*1.55+145));
-     d[i]=d[i+1]=d[i+2]=value;
-    }
-    ctx.putImageData(pixels,0,0);return canvas;
-   };
-   // Maak aparte uitsneden van de zone waar een achterkenteken doorgaans staat.
-   // De smallere uitsneden voorkomen dat logo's, ramen en gevels de OCR afleiden.
-   const images=[
-    makeCanvas(0.20,0.60,0.62,0.24,2600,'contrast'),
-    makeCanvas(0.20,0.60,0.62,0.24,2600,'binary'),
-    makeCanvas(0.12,0.55,0.76,0.34,2400,'contrast'),
-    makeCanvas(0.12,0.55,0.76,0.34,2400,'bright'),
-    makeCanvas(0,0.48,1,0.42,2200,'contrast')
-   ];
-   URL.revokeObjectURL(url);resolve(images);
-  }catch(e){URL.revokeObjectURL(url);reject(e)}};
-  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('De afbeelding kon niet worden geopend.'))};img.src=url;
- });
+let plateCropImage=null,plateCropObjectUrl=null,plateCropDrag=null,plateCropRect=null,plateCropScale=1;
+function cancelPlateCrop(){
+ const panel=$('plateCropPanel');if(panel)panel.style.display='none';
+ if(plateCropObjectUrl){URL.revokeObjectURL(plateCropObjectUrl);plateCropObjectUrl=null;}
+ plateCropImage=null;plateCropRect=null;plateCropDrag=null;
+}
+function drawPlateCrop(){
+ const canvas=$('plateCropCanvas');if(!canvas||!plateCropImage)return;
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(plateCropImage,0,0,canvas.width,canvas.height);
+ if(plateCropRect){const r=plateCropRect;ctx.save();ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.clearRect(r.x,r.y,r.w,r.h);ctx.drawImage(plateCropImage,r.x/plateCropScale,r.y/plateCropScale,r.w/plateCropScale,r.h/plateCropScale,r.x,r.y,r.w,r.h);ctx.strokeStyle='#00e5ff';ctx.lineWidth=Math.max(4,canvas.width/250);ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.restore();}
+}
+function cropPointerPos(e){const c=$('plateCropCanvas'),r=c.getBoundingClientRect();return {x:Math.max(0,Math.min(c.width,(e.clientX-r.left)*c.width/r.width)),y:Math.max(0,Math.min(c.height,(e.clientY-r.top)*c.height/r.height))};}
+function initPlateCropCanvas(){
+ const c=$('plateCropCanvas');if(!c||c.dataset.bound)return;c.dataset.bound='1';
+ c.addEventListener('pointerdown',e=>{if(!plateCropImage)return;e.preventDefault();c.setPointerCapture(e.pointerId);plateCropDrag=cropPointerPos(e);plateCropRect={x:plateCropDrag.x,y:plateCropDrag.y,w:1,h:1};drawPlateCrop();});
+ c.addEventListener('pointermove',e=>{if(!plateCropDrag)return;const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};drawPlateCrop();});
+ const finish=e=>{if(!plateCropDrag)return;const q=cropPointerPos(e);plateCropRect={x:Math.min(q.x,plateCropDrag.x),y:Math.min(q.y,plateCropDrag.y),w:Math.abs(q.x-plateCropDrag.x),h:Math.abs(q.y-plateCropDrag.y)};plateCropDrag=null;drawPlateCrop();};
+ c.addEventListener('pointerup',finish);c.addEventListener('pointercancel',finish);
 }
 async function readPlatePhoto(input){
- const file=input.files&&input.files[0];input.value='';if(!file)return;
- const status=$('plateOcrStatus');
+ const file=input.files&&input.files[0];input.value='';if(!file)return;const status=$('plateOcrStatus');
  if(!file.type.startsWith('image/')){status.textContent='Kies een afbeeldingsbestand.';return}
  if(file.size>15*1024*1024){status.textContent='Deze foto is groter dan 15 MB. Kies een kleinere foto.';return}
- status.textContent='Kentekenplaat wordt gericht gezocht…';
+ cancelPlateCrop();status.textContent='Foto wordt geopend. Teken daarna een kader om alleen de kentekenplaat.';
+ try{plateCropObjectUrl=URL.createObjectURL(file);const img=new Image();img.onload=()=>{plateCropImage=img;const c=$('plateCropCanvas');plateCropScale=Math.min(1,1100/img.naturalWidth);c.width=Math.round(img.naturalWidth*plateCropScale);c.height=Math.round(img.naturalHeight*plateCropScale);plateCropRect=null;initPlateCropCanvas();$('plateCropPanel').style.display='block';drawPlateCrop();status.textContent='Trek nu een kader om alleen de kentekenplaat.';};img.onerror=()=>{status.textContent='De afbeelding kon niet worden geopend.';cancelPlateCrop();};img.src=plateCropObjectUrl;}
+ catch(e){status.textContent='De foto kon niet worden geopend: '+(e.message||'onbekende fout');cancelPlateCrop();}
+}
+async function recognizeSelectedPlate(){
+ const status=$('plateOcrStatus'),c=$('plateCropCanvas'),r=plateCropRect;
+ if(!plateCropImage||!r||r.w<20||r.h<12){status.textContent='Trek eerst een duidelijk kader om de volledige kentekenplaat.';return}
+ status.textContent='Alleen het geselecteerde kenteken wordt gelezen…';
  try{
-  const canvases=await preparePlateImages(file),worker=await getPlateOcrWorker();
-  const votes=new Map();
-  // Lees meerdere uitsneden en tekstsegmentatiemodi; verzamel stemmen in plaats van
-  // direct de eerste toevallige patroonmatch (zoals WW177S) over te nemen.
-  for(let i=0;i<canvases.length;i++){
-   for(const psm of ['7','8','13']){
-    await worker.setParameters({tessedit_pageseg_mode:psm});
-    const result=await worker.recognize(canvases[i]),raw=(result.data.text||'').toUpperCase();
-    const tokens=raw.split(/[^A-Z0-9]+/).filter(Boolean);
-    const joined=cleanPlate(raw),joinedMatches=joined.match(/[A-Z0-9]{6}/g)||[];
-    const candidates=[...tokens,...joinedMatches].map(cleanPlate).filter(isDutchPlateCandidate);
-    for(const candidate of new Set(candidates)){
-     const old=votes.get(candidate)||{count:0,weight:0};
-     old.count++;old.weight+=i<2?3:(i<4?2:1);votes.set(candidate,old);
-    }
-   }
-   status.textContent='Kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/canvases.length*100)+'%';
-  }
-  const ranked=[...votes.entries()].sort((a,b)=>b[1].weight-a[1].weight||b[1].count-a[1].count);
-  if(!ranked.length){$('plate').value='';status.textContent='Geen betrouwbaar Nederlands kenteken herkend. Maak een foto dichter bij de kentekenplaat, recht van voren en zonder reflectie, of voer het kenteken handmatig in.';return}
-  const [candidate,score]=ranked[0];
-  // Bij een gelijke of zwakke uitslag vullen we niets automatisch in.
-  if(score.count<2){$('plate').value='';status.textContent='De foto geeft geen eenduidige herkenning. De mogelijke tekst is onzeker; voer het kenteken handmatig in of maak een close-up van alleen de plaat.';return}
-  $('plate').value=candidate;
-  status.innerHTML='Mogelijk kenteken: <b>'+esc(candidate)+'</b>. Controleer de tekens op de foto voordat je op “RDW-gegevens opvragen” drukt.';
+  const sx=Math.round(r.x/plateCropScale),sy=Math.round(r.y/plateCropScale),sw=Math.round(r.w/plateCropScale),sh=Math.round(r.h/plateCropScale);
+  const base=document.createElement('canvas');base.width=Math.max(1,sw);base.height=Math.max(1,sh);base.getContext('2d').drawImage(plateCropImage,sx,sy,sw,sh,0,0,sw,sh);
+  const variants=[];for(const mode of ['normal','contrast','binary']){const v=document.createElement('canvas'),scale=Math.min(5,Math.max(2,1800/base.width));v.width=Math.round(base.width*scale);v.height=Math.round(base.height*scale);const x=v.getContext('2d',{willReadFrequently:true});x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(base,0,0,v.width,v.height);if(mode!=='normal'){const im=x.getImageData(0,0,v.width,v.height),d=im.data;for(let i=0;i<d.length;i+=4){const g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;const z=mode==='binary'?(g<150?0:255):Math.max(0,Math.min(255,(g-105)*2+128));d[i]=d[i+1]=d[i+2]=z;}x.putImageData(im,0,0);}variants.push(v);}
+  const worker=await getPlateOcrWorker(),votes=new Map();
+  for(let i=0;i<variants.length;i++){await worker.setParameters({tessedit_pageseg_mode:'7'});const out=await worker.recognize(variants[i]);const raw=(out.data.text||'').toUpperCase();const pieces=raw.split(/[^A-Z0-9]+/).filter(Boolean);const candidates=pieces.map(cleanPlate).filter(isDutchPlateCandidate);for(const item of new Set(candidates))votes.set(item,(votes.get(item)||0)+1);status.textContent='Geselecteerde kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/variants.length*100)+'%';}
+  const ranked=[...votes.entries()].sort((a,b)=>b[1]-a[1]);
+  if(!ranked.length){$('plate').value='';status.textContent='Geen kenteken herkend in het kader. Vergroot het kader zodat de hele plaat erin staat, of maak een scherpere close-up.';return;}
+  if(ranked.length>1&&ranked[0][1]===ranked[1][1]){$('plate').value='';status.textContent='De herkenning is niet eenduidig. Pas het kader aan of voer het kenteken handmatig in.';return;}
+  const candidate=ranked[0][0];$('plate').value=candidate;status.textContent='Mogelijk kenteken: '+candidate+'. Controleer alle tekens op de foto voordat je RDW-gegevens opvraagt.';cancelPlateCrop();
  }catch(e){status.textContent='Kentekenherkenning is niet gelukt: '+(e.message||'onbekende fout')+'. Je kunt het kenteken handmatig invoeren.';}
 }
 
