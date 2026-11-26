@@ -474,10 +474,20 @@ function isDutchPlateCandidate(value){
   /^[A-Z]{2}[0-9]{3}[A-Z]$/, /^[A-Z]{3}[0-9]{2}[A-Z]$/,
   /^[0-9]{2}[A-Z]{3}[0-9]$/, /^[0-9]{2}[A-Z]{2}[0-9]{2}$/,
   /^[A-Z]{2}[0-9]{2}[A-Z]{2}$/, /^[A-Z]{2}[A-Z]{2}[0-9]{2}$/,
-  /^[0-9]{2}[0-9]{2}[A-Z]{2}$/, /^[0-9][A-Z]{3}[0-9]{2}$/,
-  /^[A-Z]{2}[0-9]{3}[A-Z]{1}$/
+  /^[0-9]{2}[0-9]{2}[A-Z]{2}$/, /^[0-9][A-Z]{3}[0-9]{2}$/
  ];
  return patterns.some(re=>re.test(x));
+}
+// OCR geeft kentekens vaak terug met spaties of streepjes (bijv. GBD-48-H).
+// Zoek daarom in de volledige herkende regel, niet in losse woorden.
+function extractDutchPlateCandidates(text){
+ const normalized=cleanPlate(text);
+ const found=[];
+ for(let i=0;i<=normalized.length-6;i++){
+  const candidate=normalized.slice(i,i+6);
+  if(isDutchPlateCandidate(candidate)&&!found.includes(candidate))found.push(candidate);
+ }
+ return found;
 }
 
 // Gratis kentekenherkenning in de browser met Tesseract.js (geen betaalde OCR/API).
@@ -531,7 +541,7 @@ async function recognizeSelectedPlate(){
   const base=document.createElement('canvas');base.width=Math.max(1,sw);base.height=Math.max(1,sh);base.getContext('2d').drawImage(plateCropImage,sx,sy,sw,sh,0,0,sw,sh);
   const variants=[];for(const mode of ['normal','contrast','binary']){const v=document.createElement('canvas'),scale=Math.min(5,Math.max(2,1800/base.width));v.width=Math.round(base.width*scale);v.height=Math.round(base.height*scale);const x=v.getContext('2d',{willReadFrequently:true});x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(base,0,0,v.width,v.height);if(mode!=='normal'){const im=x.getImageData(0,0,v.width,v.height),d=im.data;for(let i=0;i<d.length;i+=4){const g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;const z=mode==='binary'?(g<150?0:255):Math.max(0,Math.min(255,(g-105)*2+128));d[i]=d[i+1]=d[i+2]=z;}x.putImageData(im,0,0);}variants.push(v);}
   const worker=await getPlateOcrWorker(),votes=new Map();
-  for(let i=0;i<variants.length;i++){await worker.setParameters({tessedit_pageseg_mode:'7'});const out=await worker.recognize(variants[i]);const raw=(out.data.text||'').toUpperCase();const pieces=raw.split(/[^A-Z0-9]+/).filter(Boolean);const candidates=pieces.map(cleanPlate).filter(isDutchPlateCandidate);for(const item of new Set(candidates))votes.set(item,(votes.get(item)||0)+1);status.textContent='Geselecteerde kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/variants.length*100)+'%';}
+  for(let i=0;i<variants.length;i++){await worker.setParameters({tessedit_pageseg_mode:'7'});const out=await worker.recognize(variants[i]);const raw=(out.data.text||'').toUpperCase();const candidates=extractDutchPlateCandidates(raw);for(const item of candidates)votes.set(item,(votes.get(item)||0)+1);status.textContent='Geselecteerde kentekenplaat wordt gecontroleerd… '+Math.round((i+1)/variants.length*100)+'%';}
   const ranked=[...votes.entries()].sort((a,b)=>b[1]-a[1]);
   if(!ranked.length){$('plate').value='';status.textContent='Geen kenteken herkend in het kader. Vergroot het kader zodat de hele plaat erin staat, of maak een scherpere close-up.';return;}
   if(ranked.length>1&&ranked[0][1]===ranked[1][1]){$('plate').value='';status.textContent='De herkenning is niet eenduidig. Pas het kader aan of voer het kenteken handmatig in.';return;}
