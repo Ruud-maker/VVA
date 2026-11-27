@@ -1,87 +1,44 @@
 <!doctype html>
-<html lang="nl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VVA Check – Kentekenherkenning test</title>
 <style>
-:root{--blue:#0876cf;--navy:#091d50;--bg:#eaf2fc;--line:#b8d1ef}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--navy);font:15px Arial,sans-serif}
-main{max-width:900px;margin:auto;padding:18px}.hero{background:linear-gradient(135deg,#0756a5,#0876cf);color:white;padding:22px;border-radius:16px}
+:root{--blue:#0876cf;--navy:#091d50;--bg:#eaf2fc;--line:#b8d1ef}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font:15px Arial,sans-serif}main{max-width:900px;margin:auto;padding:18px}
+.hero{background:linear-gradient(135deg,#0756a5,#0876cf);color:white;padding:22px;border-radius:16px}
 h1{font-size:23px;margin:0 0 7px}.muted{color:#50658b;font-size:13px;line-height:1.5}
 .card{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
 label{display:block;font-weight:bold;margin:12px 0 6px}input[type=file]{display:block;width:100%;padding:10px;background:#f5f9ff;border:1px solid var(--line);border-radius:9px}
 button{background:var(--blue);color:white;border:0;border-radius:9px;padding:12px 16px;font-weight:bold;margin:8px 6px 0 0}
-button.secondary{background:#eaf3ff;color:var(--navy);border:1px solid var(--line)}
 .status{padding:10px;background:#f3f7fd;border-radius:8px;margin-top:10px;white-space:pre-wrap;overflow-wrap:anywhere}
-canvas{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;touch-action:manipulation}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
-.good{color:#087a37}.warn{color:#9a5b00}
-</style>
-</head>
-<body><main>
+canvas{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}.good{color:#087a37}
+</style></head><body><main>
 <section class="hero"><h1>VVA Check – Kentekenherkenning</h1><div>Afgeschermde technische test • foto's blijven lokaal op dit apparaat</div></section>
-<section class="card">
-<h2>1. Modellen laden</h2>
-<p class="muted">Selecteer de drie bestanden die je hebt ontvangen. De pagina laadt ONNX Runtime vanuit een publieke CDN; de foto's en modellen worden niet naar een server geüpload.</p>
+<section class="card"><h2>1. Modellen laden</h2><p class="muted">Selecteer de drie modelbestanden. ONNX Runtime wordt via een publieke CDN geladen; foto's en modellen worden niet geüpload.</p>
 <label>YOLO kentekendetector (.onnx)</label><input id="detector" type="file" accept=".onnx">
 <label>CCT-S-v2 OCR-model (.onnx)</label><input id="ocr" type="file" accept=".onnx">
 <label>OCR-configuratie (.yaml)</label><input id="config" type="file" accept=".yaml,.yml">
-<button id="load">Controleer modellen</button>
-<div id="modelStatus" class="status">Nog geen modellen geladen.</div>
-</section>
-<section class="card">
-<h2>2. Autofoto kiezen</h2>
-<p class="muted">Deze eerste technische proef controleert de modelbestanden en hun invoer-/uitvoermetadata. De automatische detectie en OCR-inferentie zijn nog niet geactiveerd; daarvoor moeten de exacte tensorverwerking en uitvoerdecoder uit de modelimplementatie worden overgenomen.</p>
-<input id="photo" type="file" accept="image/*" capture="environment">
-<div id="photoStatus" class="status">Nog geen foto gekozen.</div>
-<canvas id="preview" width="640" height="360"></canvas>
-</section>
-<section class="card">
-<h2>3. Technische modelinformatie</h2>
-<div class="grid"><div><b>Detector</b><div id="detMeta" class="status">Niet geladen</div></div><div><b>OCR</b><div id="ocrMeta" class="status">Niet geladen</div></div></div>
-</section>
-<section class="card">
-<h2>Wat deze testversie wel en niet doet</h2>
-<ul>
-<li>Controleert of beide ONNX-bestanden door ONNX Runtime Web geopend kunnen worden.</li>
-<li>Toont de tensor-invoer en -uitvoer die nodig zijn voor de volgende implementatiestap.</li>
-<li>Toont een lokale fotopreview.</li>
-<li><b>Nog niet:</b> automatisch kenteken detecteren, OCR-resultaat produceren of RDW raadplegen.</li>
-</ul>
-<p class="muted">Gebruik deze pagina als technische controle, niet als vervanging van de bestaande VVA Check.</p>
-</section>
+<button id="load">Controleer modellen</button><div id="modelStatus" class="status">Nog geen modellen geladen.</div></section>
+<section class="card"><h2>2. Autofoto kiezen</h2>
+<p class="muted">Kies een bestaande foto uit je bibliotheek/Bestanden, of maak een nieuwe foto met de camera.</p>
+<label for="photo">Foto uit bibliotheek / Bestanden</label><input id="photo" type="file" accept="image/*">
+<label for="cameraPhoto">Nieuwe foto maken met camera</label><input id="cameraPhoto" type="file" accept="image/*" capture="environment">
+<div id="photoStatus" class="status">Nog geen foto gekozen.</div><canvas id="preview" width="640" height="360"></canvas>
+<p class="muted">Deze proef toont de gekozen foto. Automatische kentekendetectie en OCR zijn nog niet geactiveerd.</p></section>
+<section class="card"><h2>3. Technische modelinformatie</h2><div class="grid"><div><b>Detector</b><div id="detMeta" class="status">Niet geladen</div></div><div><b>OCR</b><div id="ocrMeta" class="status">Niet geladen</div></div></div></section>
+<section class="card"><h2>Wat deze testversie wel en niet doet</h2><ul>
+<li>Controleert of beide ONNX-bestanden door ONNX Runtime Web geopend kunnen worden.</li><li>Toont de tensor-invoer en -uitvoer.</li><li>Toont een lokale fotopreview.</li><li><b>Nog niet:</b> automatisch kenteken detecteren, OCR uitvoeren of RDW raadplegen.</li></ul>
+<p class="muted">Gebruik deze pagina als technische controle, niet als vervanging van de bestaande VVA Check.</p></section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script><script>
 const $=id=>document.getElementById(id);
-let detectorSession=null,ocrSession=null;
 function dims(d){return Array.from(d||[]).map(x=>typeof x==='number'?x:(x?.dimValue||x?.dimParam||'?')).join(' × ')}
-function describe(session){return [
-'Invoer:',
-...session.inputNames.map(n=>{const x=session.inputMetadata[n];return `• ${n}: ${x.type||'type onbekend'} [${dims(x.dimensions)}]`}),
-'Uitvoer:',
-...session.outputNames.map(n=>{const x=session.outputMetadata[n];return `• ${n}: ${x.type||'type onbekend'} [${dims(x.dimensions)}]`})
-].join('\n')}
-$('load').onclick=async()=>{
- const d=$('detector').files[0],o=$('ocr').files[0],c=$('config').files[0];
- if(!d||!o||!c){$('modelStatus').textContent='Selecteer alle drie de bestanden.';return}
- $('modelStatus').textContent='Modellen worden geopend…';
- try{
-  if(!window.ort)throw Error('ONNX Runtime Web kon niet worden geladen. Controleer de internetverbinding.');
-  ort.env.wasm.numThreads=1;
-  detectorSession=await ort.InferenceSession.create(await d.arrayBuffer(),{executionProviders:['wasm']});
-  ocrSession=await ort.InferenceSession.create(await o.arrayBuffer(),{executionProviders:['wasm']});
-  const cfg=await c.text();
-  $('detMeta').textContent=describe(detectorSession);
-  $('ocrMeta').textContent=describe(ocrSession);
-  $('modelStatus').innerHTML='<span class="good">Beide ONNX-bestanden zijn succesvol geopend.</span>\nConfiguratiebestand gelezen ('+cfg.length+' tekens).\nRuntime: ONNX Runtime Web / WebAssembly.';
- }catch(e){$('modelStatus').textContent='Modelcontrole mislukt:\n'+(e?.message||e)}
-};
-$('photo').onchange=()=>{
- const f=$('photo').files[0];if(!f)return;
- const url=URL.createObjectURL(f),img=new Image();
- img.onload=()=>{const c=$('preview'),ctx=c.getContext('2d'),scale=Math.min(c.width/img.width,c.height/img.height);ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,img.width*scale,img.height*scale);URL.revokeObjectURL(url);$('photoStatus').textContent=`Foto lokaal geladen: ${f.name}\nAfmetingen: ${img.width} × ${img.height} pixels.`};
- img.onerror=()=>{$('photoStatus').textContent='Foto kon niet worden geopend.'};img.src=url;
-};
+function describe(s){return ['Invoer:',...s.inputNames.map(n=>{const x=s.inputMetadata[n];return `• ${n}: ${x.type||'type onbekend'} [${dims(x.dimensions)}]`}), 'Uitvoer:',...s.outputNames.map(n=>{const x=s.outputMetadata[n];return `• ${n}: ${x.type||'type onbekend'} [${dims(x.dimensions)}]`})].join('\n')}
+$('load').onclick=async()=>{const d=$('detector').files[0],o=$('ocr').files[0],c=$('config').files[0];if(!d||!o||!c){$('modelStatus').textContent='Selecteer alle drie de bestanden.';return}
+$('modelStatus').textContent='Modellen worden geopend…';try{if(!window.ort)throw Error('ONNX Runtime Web kon niet worden geladen. Controleer de internetverbinding.');
+ort.env.wasm.numThreads=1;const ds=await ort.InferenceSession.create(await d.arrayBuffer(),{executionProviders:['wasm']});const os=await ort.InferenceSession.create(await o.arrayBuffer(),{executionProviders:['wasm']});
+const cfg=await c.text();$('detMeta').textContent=describe(ds);$('ocrMeta').textContent=describe(os);$('modelStatus').innerHTML='<span class="good">Beide ONNX-bestanden zijn succesvol geopend.</span>\nConfiguratiebestand gelezen ('+cfg.length+' tekens).\nRuntime: ONNX Runtime Web / WebAssembly.';
+}catch(e){$('modelStatus').textContent='Modelcontrole mislukt:\n'+(e?.message||e)}};
+function showPhoto(f){if(!f)return;const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{const c=$('preview'),ctx=c.getContext('2d'),scale=Math.min(c.width/img.width,c.height/img.height);ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,img.width*scale,img.height*scale);URL.revokeObjectURL(url);$('photoStatus').textContent=`Foto lokaal geladen: ${f.name}\nAfmetingen: ${img.width} × ${img.height} pixels.`};img.onerror=()=>{$('photoStatus').textContent='Foto kon niet worden geopend.'};img.src=url}
+$('photo').onchange=()=>showPhoto($('photo').files[0]);$('cameraPhoto').onchange=()=>showPhoto($('cameraPhoto').files[0]);
 </script></body></html>
