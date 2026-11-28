@@ -1,0 +1,8 @@
+VVA Check – herstel kentekenherkenning
+
+1. Vervang index.html in GitHub door VVA-Check-index-AI-kenteken-HERSTELD-2.html.
+2. Vervang de code van Cloudflare Worker vva-ai-kenteken door VVA-Check-cloudflare-worker-herstel.js en klik Deploy.
+3. De Cloudflare Secret OPENAI_API_KEY blijft behouden; voeg deze niet opnieuw toe.
+4. Test met een duidelijke close-up. Het formaat L-99-AAA (zoals V-06-LBX) wordt nu door de herkenningscontrole toegelaten.
+
+Let op: OCR kan nog steeds tekens verkeerd lezen. Controleer het kenteken altijd handmatig voordat je RDW opvraagt.

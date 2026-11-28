@@ -491,7 +491,8 @@ function isDutchPlateCandidate(value){
   /^[A-Z]{2}[0-9]{3}[A-Z]$/, /^[A-Z]{3}[0-9]{2}[A-Z]$/,
   /^[0-9]{2}[A-Z]{3}[0-9]$/, /^[0-9]{2}[A-Z]{2}[0-9]{2}$/,
   /^[A-Z]{2}[0-9]{2}[A-Z]{2}$/, /^[A-Z]{2}[A-Z]{2}[0-9]{2}$/,
-  /^[0-9]{2}[0-9]{2}[A-Z]{2}$/, /^[0-9][A-Z]{3}[0-9]{2}$/
+  /^[0-9]{2}[0-9]{2}[A-Z]{2}$/, /^[0-9][A-Z]{3}[0-9]{2}$/,
+  /^[A-Z][0-9]{2}[A-Z]{3}$/
  ];
  return patterns.some(re=>re.test(x));
 }
@@ -500,7 +501,7 @@ function isDutchPlateCandidate(value){
 function extractDutchPlateCandidates(text){
  const normalized=cleanPlate(text);
  const found=new Set();
- const formats=['LLDDDL','LLLDDL','DDLLLD','DDLLDD','LLDDLL','LLLLDD','DDDDLL','DLLLDD'];
+ const formats=['LLDDDL','LLLDDL','DDLLLD','DDLLDD','LLDDLL','LLLLDD','DDDDLL','DLLLDD','LDDLLL'];
  const toLetter={'0':'O','1':'I','2':'Z','5':'S','6':'G','8':'B'};
  const toDigit={'O':'0','Q':'0','D':'0','I':'1','L':'1','Z':'2','S':'5','G':'6','B':'8'};
  for(let i=0;i<=normalized.length-6;i++){
@@ -1301,7 +1302,8 @@ function formatDutchPlate(value){
   /^([0-9]{2})([0-9]{3})([A-Z])$/,
   /^([A-Z]{2})([0-9]{3})([A-Z])$/,
   /^([A-Z])([0-9]{3})([A-Z]{2})$/,
-  /^([0-9])([A-Z]{3})([0-9]{2})$/
+  /^([0-9])([A-Z]{3})([0-9]{2})$/,
+  /^([A-Z])([0-9]{2})([A-Z]{3})$/
  ];
  for(const re of formats){const m=p.match(re);if(m)return m.slice(1).join('-');}
  return p;
