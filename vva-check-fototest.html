@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5a623">
+<title>VVA Check – Kentekenherkenning test</title>
+<style>
+:root{--ink:#172b3a;--muted:#60717d;--gold:#f2a51a;--blue:#173f5f;--line:#e4e9ec;--bg:#f4f7f8}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#fff8e9 0,#f4f7f8 260px);font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+header{padding:26px 18px 22px;text-align:center;background:linear-gradient(135deg,#f7bd4c,#fff0c9);border-bottom:1px solid #f1dfb8}
+.brand{font-weight:850;font-size:13px;letter-spacing:.16em;color:#77500c}.hero{max-width:760px;margin:12px auto 0}.hero h1{font-size:clamp(27px,6vw,42px);line-height:1.08;margin:8px 0;color:#163c58}.hero p{margin:8px 0 0;color:#536572}
+main{max-width:760px;margin:20px auto;padding:0 14px 40px}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 5px 20px #1a34400b}
+h2{font-size:19px;margin:0 0 8px}.sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:12px;padding:14px 12px;font-weight:750;font-size:15px;cursor:pointer;background:var(--blue);color:white}.btn.secondary{background:#edf3f6;color:var(--blue);border:1px solid #dce5eb}.btn:disabled{opacity:.5;cursor:wait}
+input[type=text]{width:100%;padding:14px;border:1px solid #cbd6dd;border-radius:11px;font-size:18px;text-transform:uppercase;letter-spacing:.08em}
+.preview{display:none;width:100%;max-height:300px;object-fit:contain;background:#eef2f4;border-radius:12px;margin-top:12px}
+.status{padding:11px 12px;border-radius:10px;background:#f1f5f7;color:#405663;font-size:14px;margin-top:12px}.status.ok{background:#e8f6ee;color:#17633a}.status.warn{background:#fff5df;color:#80520a}.status.err{background:#fff0ef;color:#9c2c24}
+.plate{font-size:26px;font-weight:850;letter-spacing:.14em;text-align:center;background:#ffdf36;border:2px solid #222;border-radius:8px;padding:8px 12px;color:#111;max-width:270px;margin:12px auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{padding:10px;border:1px solid var(--line);border-radius:10px}.field small{display:block;color:var(--muted);font-size:12px}.field b{display:block;margin-top:3px;overflow-wrap:anywhere}
+.note{font-size:12px;color:var(--muted);line-height:1.5}.hide{display:none!important}
+footer{text-align:center;color:#71808a;font-size:12px;padding:10px 20px 30px}
+@media(max-width:480px){.actions,.grid{grid-template-columns:1fr}.card{padding:15px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">🇳🇱 VVA CHECK</div>
+ <div class="hero"><h1>Van autofoto naar RDW-gegevens</h1><p>Maak een foto van de auto. VVA probeert het kenteken te lezen en haalt daarna de openbare voertuiggegevens op.</p></div>
+</header>
+<main>
+ <section class="card">
+  <h2>📷 1. Maak een foto van de auto</h2>
+  <p class="sub">Zorg dat het kenteken scherp en goed leesbaar in beeld staat. De foto wordt alleen in deze browsersessie verwerkt.</p>
+  <div class="actions">
+   <label class="btn" for="camera">📷 Foto maken</label>
+   <label class="btn secondary" for="upload">🖼️ Foto kiezen</label>
+  </div>
+  <input id="camera" class="hide" type="file" accept="image/*" capture="environment">
+  <input id="upload" class="hide" type="file" accept="image/*">
+  <img id="preview" class="preview" alt="Geselecteerde autofoto">
+  <div id="ocrStatus" class="status">Wacht op een foto.</div>
+  <p class="note">De herkenning draait lokaal in je browser. Er wordt geen foto naar VVA of RDW verstuurd. De OCR-engine wordt bij het eerste gebruik vanaf een CDN geladen.</p>
+ </section>
+ <section class="card">
+  <h2>🔎 2. Controleer het herkende kenteken</h2>
+  <p class="sub">Als de foto niet goed genoeg is, kun je het kenteken zelf corrigeren.</p>
+  <input id="plate" type="text" placeholder="Bijv. GBD48H" autocomplete="off" autocapitalize="characters">
+  <div class="actions" style="margin-top:10px">
+   <button id="rdwBtn" class="btn" type="button">RDW-gegevens ophalen</button>
+   <button id="clearBtn" class="btn secondary" type="button">Opnieuw beginnen</button>
+  </div>
+  <div id="plateStatus" class="status">Nog geen kenteken herkend.</div>
+ </section>
+ <section class="card">
+  <h2>🚘 3. Voertuiggegevens</h2>
+  <p class="sub">Gegevens uit de openbare RDW-dataset. Niet alle voertuigkenmerken zijn voor ieder voertuig beschikbaar.</p>
+  <div id="vehicle" class="note">Na een geslaagde RDW-opvraag verschijnen hier de gegevens.</div>
+ </section>
+ <p class="note">Testversie. De fotoherkenning kan bij een kleine, schuine, donkere of onscherpe kentekenplaat mislukken. Controleer het kenteken altijd voordat je de RDW-gegevens gebruikt.</p>
+</main>
+<footer>VVA Check · Testomgeving · Geen foto-opslag · Geen BPM- of waardebepaling in deze test</footer>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let worker=null, currentUrl=null;
+const status=(id,msg,kind='')=>{const el=$(id);el.textContent=msg;el.className='status '+kind};
+function normalize(s){return (s||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function plateCandidates(text){
+ const raw=normalize(text);
+ const patterns=[
+  /[A-Z]{2}[0-9]{2}[0-9]{2}/g,/[0-9]{2}[0-9]{2}[A-Z]{2}/g,
+  /[0-9]{2}[A-Z]{2}[0-9]{2}/g,/[A-Z]{2}[0-9]{2}[A-Z]{2}/g,
+  /[A-Z]{2}[A-Z]{2}[0-9]{2}/g,/[0-9]{2}[A-Z]{2}[A-Z]{2}/g
+ ];
+ let found=[]; for(const p of patterns){for(const m of raw.matchAll(p))found.push(m[0])}
+ return [...new Set(found)];
+}
+async function getWorker(){
+ if(worker)return worker;
+ if(!window.Tesseract)throw new Error('OCR-bibliotheek kon niet worden geladen. Controleer je internetverbinding.');
+ worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text')status('ocrStatus','Kenteken wordt gelezen… '+Math.round((m.progress||0)*100)+'%')}});
+ await worker.setParameters({tessedit_pageseg_mode:'11',preserve_interword_spaces:'1'});
+ return worker;
+}
+function makeReadable(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+   const max=2200,scale=Math.min(1,max/Math.max(img.width,img.height));
+   const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+   const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,c.width,c.height);
+   const d=x.getImageData(0,0,c.width,c.height);
+   for(let i=0;i<d.data.length;i+=4){const v=(.299*d.data[i]+.587*d.data[i+1]+.114*d.data[i+2]);const z=Math.max(0,Math.min(255,(v-110)*1.45+110));d.data[i]=d.data[i+1]=d.data[i+2]=z}
+   x.putImageData(d,0,0);URL.revokeObjectURL(url);resolve(c);
+  };img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Foto kon niet worden geopend.'))};img.src=url;
+ });
+}
+async function showPhoto(file){
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=()=>{
+   const preview=$('preview');
+   preview.onload=()=>resolve(preview);
+   preview.onerror=()=>reject(new Error('Safari kan deze foto-indeling niet weergeven. Kies eventueel een JPEG-foto.'));
+   preview.src=reader.result;
+   preview.style.display='block';
+  };
+  reader.onerror=()=>reject(new Error('De foto kon niet uit de iPhone worden gelezen.'));
+  reader.readAsDataURL(file);
+ });
+}
+async function processPhoto(file){
+ if(!file)return;
+ status('ocrStatus','Foto wordt ingelezen…');
+ try{
+  await showPhoto(file);
+  status('ocrStatus','Foto zichtbaar. Kenteken wordt nu gelezen…');
+  const c=await makeReadable(file),w=await getWorker();
+  const result=await w.recognize(c);
+  const candidates=plateCandidates(result.data.text);
+  if(candidates.length){
+   $('plate').value=candidates[0];
+   status('ocrStatus','Kenteken gevonden: '+candidates[0]+'. Controleer het resultaat en haal de RDW-gegevens op.','ok');
+   status('plateStatus','Controleer de letters en cijfers. Tik daarna op RDW-gegevens ophalen.','warn');
+  }else{
+   status('ocrStatus','Geen betrouwbaar Nederlands kenteken gevonden. Maak een scherpere foto of vul het kenteken hieronder handmatig in.','warn');
+  }
+ }catch(e){status('ocrStatus',e.message||'Herkenning mislukt.','err')}
+ finally{
+  // Geen foto of OCR-resultaat wordt opgeslagen op het toestel.
+  $('camera').value='';$('upload').value='';
+ }
+}
+$('camera').addEventListener('change',e=>processPhoto(e.target.files[0]));
+$('upload').addEventListener('change',e=>processPhoto(e.target.files[0]));
+function validDutchFormat(s){return /^[A-Z0-9]{6}$/.test(normalize(s))}
+const labels={
+ merk:'Merk',handelsbenaming:'Model / handelsbenaming',voertuigsoort:'Voertuigsoort',
+ inrichting:'Carrosserie / inrichting',eerste_kleur:'Kleur',brandstof_omschrijving:'Brandstof',
+ vermogen_motor:'Vermogen (kW)',massa_rijklaar:'Massa rijklaar (kg)',massa_ledig_voertuig:'Massa ledig (kg)',
+ datum_eerste_toelating:'Datum eerste toelating',datum_eerste_tenaamstelling_in_nederland:'Eerste toelating NL',
+ vervaldatum_apk:'APK-vervaldatum',catalogusprijs:'Catalogusprijs',aantal_zitplaatsen:'Zitplaatsen',
+ aantal_deuren:'Aantal deuren',aantal_cilinders:'Cilinders',cilinderinhoud:'Cilinderinhoud (cm³)',
+ toegestane_maximum_massa_voertuig:'Toegestane max. massa (kg)',maximum_massa_trekken_ongeremd:'Max. trekgewicht ongeremd (kg)',
+ maximum_massa_trekken_geremd:'Max. trekgewicht geremd (kg)',co2_uitstoot:'CO₂-uitstoot'
+};
+function dateVal(v){if(!v)return '—';const s=String(v);if(/^\d{8}$/.test(s))return s.slice(6,8)+'-'+s.slice(4,6)+'-'+s.slice(0,4);return s}
+function esc(s){return String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function lookup(){
+ const plate=normalize($('plate').value);$('plate').value=plate;
+ if(!validDutchFormat(plate)){status('plateStatus','Vul een kenteken van 6 letters/cijfers in.','warn');return}
+ $('rdwBtn').disabled=true;status('plateStatus','RDW-gegevens worden opgehaald…');
+ try{
+  const url='https://opendata.rdw.nl/resource/m9d7-ebf2.json? kenteken='+encodeURIComponent(plate);
+  const fixed=url.replace('? kenteken=','?kenteken=');
+  const res=await fetch(fixed,{headers:{Accept:'application/json'}});
+  if(!res.ok)throw new Error('RDW geeft een foutmelding ('+res.status+').');
+  const rows=await res.json();
+  if(!rows.length){status('plateStatus','Geen voertuig gevonden bij de RDW voor '+plate+'.','warn');return}
+  const v=rows[0];let html='<div class="plate">'+esc(plate)+'</div><div class="grid">';
+  for(const [key,label] of Object.entries(labels)){
+   if(v[key]!==undefined&&v[key]!==null&&v[key]!==''){
+    let value=v[key];if(key.startsWith('datum_')||key==='vervaldatum_apk')value=dateVal(value);
+    if(key==='catalogusprijs')value='€ '+Number(value).toLocaleString('nl-NL');
+    html+='<div class="field"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>';
+   }
+  }
+  html+='</div><p class="note" style="margin-top:12px">Bron: RDW Open Data · Dataset Gekentekende voertuigen · CC0</p>';
+  $('vehicle').innerHTML=html;status('plateStatus','RDW-gegevens succesvol opgehaald.','ok');
+ }catch(e){status('plateStatus','RDW-opvraag mislukt: '+e.message,'err')}
+ finally{$('rdwBtn').disabled=false}
+}
+$('rdwBtn').addEventListener('click',lookup);
+$('clearBtn').addEventListener('click',()=>{
+ $('plate').value='';$('vehicle').textContent='Na een geslaagde RDW-opvraag verschijnen hier de gegevens.';
+ $('preview').removeAttribute('src');$('preview').style.display='none';
+ status('ocrStatus','Wacht op een foto.');status('plateStatus','Nog geen kenteken herkend.');
+});
+</script>
+</body></html>
