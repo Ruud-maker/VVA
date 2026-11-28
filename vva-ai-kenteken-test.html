@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VVA Check – AI-kentekentest</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7fa;color:#17212b;margin:0;padding:20px;max-width:680px;margin-inline:auto}
+main{background:white;border-radius:18px;padding:22px;box-shadow:0 8px 28px #17212b12}h1{font-size:1.55rem;margin:0 0 8px}p{line-height:1.5;color:#465564}
+input[type=file]{display:block;margin:16px 0}img{display:none;width:100%;max-height:420px;object-fit:contain;border-radius:12px;background:#eef2f5;margin:12px 0}
+.consent{display:flex;gap:10px;align-items:flex-start;margin:16px 0}.consent input{margin-top:5px}
+button{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;padding:15px 18px;font-size:1rem;font-weight:650;background:#1267a5;color:white;margin-top:12px}
+button:disabled{opacity:.45}.secondary{background:#e8eef4;color:#17212b}#status{margin-top:16px;padding:13px;border-radius:10px;background:#f0f4f7;white-space:pre-wrap;overflow-wrap:anywhere}
+small{color:#667583}
+</style></head><body><main>
+<h1>VVA Check – AI-kentekentest</h1>
+<p>Selecteer een autofoto. De foto blijft eerst op dit toestel zichtbaar. Pas nadat je toestemming geeft en op de herkenningsknop drukt, wordt de foto naar VVA Check gestuurd en via OpenAI verwerkt.</p>
+<strong>1. Kies een autofoto</strong><input id="photo" type="file" accept="image/jpeg,image/png,image/webp">
+<img id="preview" alt="Voorbeeld van geselecteerde autofoto">
+<div class="consent"><input id="consent" type="checkbox"><label for="consent">Ik geef toestemming om deze foto via de VVA Check-server naar OpenAI te sturen voor kentekenherkenning.</label></div>
+<button id="recognize" disabled>2. Herken kenteken met AI</button>
+<div id="status" role="status">Wacht op een foto.</div>
+<div id="vehicle" hidden><h2>RDW-voertuiggegevens</h2><pre id="vehicleData" style="white-space:pre-wrap"></pre></div>
+<p><small>Testpagina. AI-herkenning kan fouten maken. Controleer het kenteken altijd. Deze pagina slaat de foto niet op.</small></p>
+</main>
+<script>
+const WORKER="https://vva-ai-kenteken.vangompelruud.workers.dev";
+const photo=document.getElementById("photo"),preview=document.getElementById("preview"),consent=document.getElementById("consent"),recognize=document.getElementById("recognize"),statusBox=document.getElementById("status");
+let imageData="";
+function updateButton(){recognize.disabled=!(imageData&&consent.checked)}
+photo.addEventListener("change",()=>{
+ const file=photo.files&&photo.files[0];imageData="";document.getElementById("vehicle").hidden=true;
+ if(!file){preview.style.display="none";statusBox.textContent="Geen foto geselecteerd.";updateButton();return}
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>10*1024*1024){preview.style.display="none";statusBox.textContent="Kies een JPG-, PNG- of WEBP-foto kleiner dan 10 MB.";updateButton();return}
+ const reader=new FileReader();reader.onload=()=>{imageData=String(reader.result||"");preview.src=imageData;preview.style.display="block";statusBox.textContent="Foto geselecteerd. Geef toestemming om de AI-herkenning te starten.";updateButton()};reader.onerror=()=>{statusBox.textContent="Foto kon niet worden gelezen."};reader.readAsDataURL(file)
+});
+consent.addEventListener("change",updateButton);
+recognize.addEventListener("click",async()=>{
+ if(!imageData||!consent.checked)return;recognize.disabled=true;statusBox.textContent="AI-herkenning bezig…";
+ try{
+  const response=await fetch(WORKER+"/recognize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:imageData})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"AI-herkenning mislukt.");
+  if(!data.plate)throw new Error(data.reason||"Geen betrouwbaar kenteken herkend. Probeer een scherpere foto.");
+  statusBox.textContent="AI-herkenning: "+data.plate+"\nBetrouwbaarheid: "+(data.confidence||"niet opgegeven")+(data.reason?"\nToelichting: "+data.reason:"");
+  const rdwResponse=await fetch(WORKER+"/rdw?plate="+encodeURIComponent(data.plate));const rdw=await rdwResponse.json();
+  if(!rdwResponse.ok)throw new Error(rdw.error||"RDW-opvraag mislukt.");
+  if(!rdw.vehicle)throw new Error("Geen voertuig gevonden bij RDW voor "+data.plate+".");
+  document.getElementById("vehicleData").textContent="Kenteken: "+(rdw.vehicle.kenteken||data.plate)+"\nMerk: "+(rdw.vehicle.merk||"Onbekend")+"\nHandelsbenaming: "+(rdw.vehicle.handelsbenaming||"Onbekend")+"\nVoertuigsoort: "+(rdw.vehicle.voertuigsoort||"Onbekend")+"\nEerste toelating: "+(rdw.vehicle.datum_eerste_toelating||"Onbekend");
+  document.getElementById("vehicle").hidden=false;statusBox.textContent+="\nRDW-gegevens succesvol opgehaald.";
+ }catch(error){statusBox.textContent="Fout: "+error.message+"\nControleer of de Worker-code en de OpenAI API-sleutel goed zijn ingesteld."}
+ finally{updateButton()}
+});
+</script></body></html>
